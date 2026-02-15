@@ -10,6 +10,21 @@
 <meta name="theme-color" content="#121212">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
+:root {
+    /* Wyraźne, energetyczne, ale profesjonalne */
+    --color-shift1: #2ecc71;   /* Soczysta zieleń - kojarzy się z działaniem */
+    --color-shift2: #f39c12;   /* Ciepły bursztyn - dobrze widoczny */
+    --color-shift3: #3498db;   /* Solidny niebieski - spokój nocnej zmiany */
+    --color-off: #cbd5e0;      /* Mocniejszy szary - wyraźnie mówi "tu nie pracujesz" */
+    --color-holiday: #e74c3c;  /* Wyrazista czerwień - ostrzeżenie o święcie */
+    
+    --text-light: #ffffff;
+    --text-dark: #2d3748;
+    
+    --bg-page: #f8fafc;        /* Twoje bazowe jasne tło */
+    --bg-datebar: #f1f5f9;     /* Ton ciemniejszy dla DateBar */
+    --text-date: #2d3748;
+}
 
 * {
     box-sizing: border-box;
@@ -18,54 +33,95 @@
 }
 
 body {
-    background-color: #f4f4f4;
+    background-color: #f8fafc; /* Nieco lżejsze tło dla nowoczesnego looku */
     font-family: sans-serif;
-    overflow: hidden; /* Blokujemy przypadkowy scroll całej strony */
+    overflow: hidden;
+    color: var(--text-dark);
 }
 
 @media (prefers-color-scheme: dark) {
-    .grafik { filter: saturate(0.9) brightness(0.8); }
-    body { background-color: #121212; color: #eee; }
+    /*.grafik { filter: saturate(0.8) brightness(0.8); } */
+    body { background-color: #0f172a; color: #eee; }
+    
+    :root {
+        /* Ciemny motyw */
+        --bg-page: #0f172a;    /* Twoje bazowe ciemne tło */
+        --bg-datebar: #1e293b; /* Ton jaśniejszy dla DateBar */
+        --text-date: #f1f5f9;
+    }
 }
 
-/* Główny kontener zajmujący wysokość ekranu */
+/* KONTENER GŁÓWNY */
 .grafik_wrapper {
     width: 98vw;
     max-width: 800px;
-    height: 98vh;
-    margin: 1vh auto;
+    height: 95vh;
+    margin: 2vh auto;
     display: flex;
     flex-direction: column;
-    gap: 8px; /* Odstęp między sekcjami */
+    gap: 8px;
 }
 
-/* NAGŁÓWEK - Górne przyciski */
+
+
+/* NAGŁÓWEK */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0; /* Nie pozwól nagłówkowi się ścisnąć */
+    flex-shrink: 0;
 }
 
 #dateBar {
     flex-grow: 1;
-    text-align: center;
-    font-size: clamp(1rem, 4vw, 1.3rem);
-    font-weight: bold;
+    height: 50px;              /* Taka sama wysokość jak przyciski nav-btn */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    background-color: var(--bg-datebar);
+    color: var(--text-date);
+    
+    font-size: clamp(0.9rem, 4vw, 1.1rem);
+    font-weight: 800;          /* Mocniejsze pogrubienie dla nowoczesnego looku */
     text-transform: uppercase;
+    letter-spacing: 1px;       /* Lekki odstęp między literami */
+    
+    border-radius: 10px;       /* Spójne z przyciskami */
+    margin: 0 4px;             /* Odstęp od strzałek */
 }
 
-/* KALENDARZ - Serce układu */
+/* PRZYCISKI */
+.button {
+    cursor: pointer;
+    padding: clamp(10px, 2vh, 18px) 10px;
+    border: 1px solid #cbd5e0;
+    background-color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    border-radius: 10px; /* Nieco bardziej zaokrąglone */
+    appearance: none;
+    transition: all 0.2s ease;
+    color: var(--text-dark);
+}
+
+.button.active {
+    background-color: var(--text-dark);
+    color: white;
+    border-color: var(--text-dark);
+}
+
+/* KALENDARZ */
 .grafik {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    /* Dni tygodnia auto, reszta (dni miesiąca) zajmuje dostępną przestrzeń */
-    grid-template-rows: auto repeat(6, 1fr); 
-    gap: 2px;
-    background-color: #ddd;
-    border: 1px solid #ccc;
-    padding: 2px;
-    flex-grow: 1; /* Kalendarz "puchnie" i wypełnia środek */
+    grid-template-rows: auto repeat(6, 1fr);
+    gap: 3px; /* Nieco większy odstęp dla przejrzystości */
+    background-color: #e2e8f0;
+    border: 1px solid #cbd5e0;
+    padding: 3px;
+    flex-grow: 1;
+    border-radius: 8px;
 }
 
 .day {
@@ -75,40 +131,28 @@ body {
     justify-content: center;
     align-items: center;
     font-size: clamp(0.9rem, 3.5vw, 1.2rem);
-    color: #333;
-    min-height: 0; /* Pozwala na swobodne ściskanie wewnątrz flexa */
-}
-
-.day strong {
-    font-weight: 600;
+    border-radius: 4px;
+    transition: transform 0.1s ease;
 }
 
 .day-name {
-    background-color: #333 !important;
+    background-color: var(--text-dark) !important;
     color: white;
     font-weight: bold;
     padding: 8px 0;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
 }
 
-/* PRZYCISKI */
-.button {
-    cursor: pointer;
-    padding: clamp(10px, 2vh, 18px) 10px;
-    border: 1px solid #333;
-    background-color: white;
-    font-weight: bold;
-    font-size: 0.9rem;
-    border-radius: 8px;
-    appearance: none;
-    transition: background 0.2s;
-}
+/* KOLORY ZMIAN OPARTE NA ZMIENNYCH */
+.shift1  { background-color: var(--color-shift1); color: var(--text-light); }
+.shift2  { background-color: var(--color-shift2); color: var(--text-light); }
+.shift3  { background-color: var(--color-shift3); color: var(--text-light); }
 
-.button.active {
-    background-color: #333;
-    color: white;
-}
+/* Dla "Wolnego" i "Święta" używamy ciemniejszego tekstu dla lepszego kontrastu */
+.off     { background-color: var(--color-off); color: var(--text-dark); }
+.holiday { background-color: var(--color-holiday); color: var(--text-light); font-weight: bold; }
+.empty   { background-color: var(--color-empty); opacity: 0.5; }
 
 /* DOLNY PANEL */
 .brigadeBar {
@@ -122,7 +166,7 @@ body {
 }
 
 footer.legend {
-    border-top: 1px solid #ddd;
+    border-top: 1px solid #e2e8f0;
     padding-top: 5px;
     flex-shrink: 0;
 }
@@ -133,7 +177,9 @@ footer.legend {
     text-align: center;
     font-weight: bold;
     font-size: 0.9rem;
-    border-radius: 4px;
+    border-radius: 6px;
+    background-color: var(--color-off);
+    color: var(--text-dark);
 }
 
 .legendBar {
@@ -143,94 +189,21 @@ footer.legend {
 }
 
 .legendBar div {
-    padding: 6px 2px;
+    padding: 8px 2px;
     font-size: 0.75rem;
-    border-radius: 4px;
+    border-radius: 6px;
     flex: 1;
     min-width: 65px;
     text-align: center;
+    font-weight: 600;
 }
 
-/* KOLORY */
-.shift1  { background-color: #76BC83; color: white; }
-.shift2  { background-color: #BCA676; color: white; }
-.shift3  { background-color: #768CBC; color: white; }
-.off     { background-color: #898989; color: white; }
-.holiday { background-color: #BC76AF; color: white; }
-.empty   { background-color: #f9f9f9; }
-
-/* OPTYMALIZACJA POD MOBILE */
 @media (max-width: 480px) {
-    .grafik_wrapper { gap: 4px; }
-    .day { padding: 2px; }
-    .button { padding: 12px 5px; }
-}
-
-/* KOLORY ZMIAN */
-.shift1  { background-color: #76BC83; color: white; }
-.shift2  { background-color: #BCA676; color: white; }
-.shift3  { background-color: #768CBC; color: white; }
-.off     { background-color: #898989; color: white; }
-.holiday { background-color: #BC76AF; color: white; }
-.empty   { background-color: #f9f9f9; }
-
-/* DOLNY PANEL */
-.brigadeBar {
-    display: flex;
-    margin-top: 8px;
-    gap: 5px;
-}
-
-.brigadeBar .button {
-    flex: 1;
-}
-
-footer.legend {
-    margin-top: 10px;
-    border-top: 1px solid #ddd;
-    padding-top: 8px;
-}
-
-#wzsBar {
-    padding: 6px;
-    margin-bottom: 8px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 0.85rem;
-    border-radius: 4px;
-}
-
-.legendBar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.legendBar div {
-    padding: 4px;
-    font-size: 0.7rem;
-    border-radius: 3px;
-    flex: 1;
-    min-width: 60px;
-    text-align: center;
-}
-
-/* FIX DLA MAŁYCH EKRANÓW (Firefox Mobile) */
-@media (max-width: 480px) {
-    .day {
-        padding: 6px 1px;
-        min-height: 32px;
-    }
-    
-    .button {
-        padding: 8px 4px;
-    }
-
-    #dateBar {
-        font-size: 0.8rem;
+    .nav-btn {
+        min-width: 70px;      /* Większy margines błędu przy klikaniu */
+        height: 55px;
     }
 }
-
 </style>
 
 <script>
@@ -436,10 +409,10 @@ function render(year, month, brigade) {
 <body onload="init()">
 <div class="grafik_wrapper">
   <div class="header">
-    <button class="button" id="prev">PREV</button>
-    <div id="dateBar"></div>
-    <button class="button" id="next">NEXT</button>
-  </div>
+  <button class="button nav-btn" id="prev">&#10094;</button>
+  <div id="dateBar"></div>
+  <button class="button nav-btn" id="next">&#10095;</button>
+</div>
   
   <div class="grafik"></div>
   
