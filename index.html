@@ -20,60 +20,89 @@
 body {
     background-color: #f4f4f4;
     font-family: sans-serif;
-    /* Zapobiega "skakaniu" strony przy przełączaniu miesięcy */
-    overscroll-behavior: none; 
+    overflow: hidden; /* Blokujemy przypadkowy scroll całej strony */
 }
 
 @media (prefers-color-scheme: dark) {
-    .grafik {
-        filter: saturate(0.9) brightness(0.8);
-    }
-    body {
-        background-color: #2c2c2c;
-        color: #eee;
-    }
+    .grafik { filter: saturate(0.9) brightness(0.8); }
+    body { background-color: #121212; color: #eee; }
 }
 
+/* Główny kontener zajmujący wysokość ekranu */
 .grafik_wrapper {
-    width: 96vw;
-    max-width: 600px; /* Nieco zwężony dla lepszej czytelności pionowej */
+    width: 98vw;
+    max-width: 800px;
+    height: 98vh;
     margin: 1vh auto;
     display: flex;
     flex-direction: column;
+    gap: 8px; /* Odstęp między sekcjami */
 }
 
-/* NAGŁÓWEK */
+/* NAGŁÓWEK - Górne przyciski */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px; /* Zredukowany margines */
-    gap: 8px;
+    flex-shrink: 0; /* Nie pozwól nagłówkowi się ścisnąć */
 }
 
 #dateBar {
     flex-grow: 1;
     text-align: center;
-    font-size: 0.9rem;
+    font-size: clamp(1rem, 4vw, 1.3rem);
     font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* KALENDARZ - Serce układu */
+.grafik {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    /* Dni tygodnia auto, reszta (dni miesiąca) zajmuje dostępną przestrzeń */
+    grid-template-rows: auto repeat(6, 1fr); 
+    gap: 2px;
+    background-color: #ddd;
+    border: 1px solid #ccc;
+    padding: 2px;
+    flex-grow: 1; /* Kalendarz "puchnie" i wypełnia środek */
+}
+
+.day {
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: clamp(0.9rem, 3.5vw, 1.2rem);
+    color: #333;
+    min-height: 0; /* Pozwala na swobodne ściskanie wewnątrz flexa */
+}
+
+.day strong {
+    font-weight: 600;
+}
+
+.day-name {
+    background-color: #333 !important;
+    color: white;
+    font-weight: bold;
+    padding: 8px 0;
+    font-size: 0.75rem;
     text-transform: uppercase;
 }
 
 /* PRZYCISKI */
 .button {
     cursor: pointer;
-    padding: 10px 5px; /* Kompaktowe przyciski */
+    padding: clamp(10px, 2vh, 18px) 10px;
     border: 1px solid #333;
     background-color: white;
     font-weight: bold;
-    font-size: 0.8rem;
-    transition: 0.2s;
-    appearance: none; /* Kluczowe dla Firefoxa */
-    border-radius: 4px;
-}
-
-.button:active {
-    background-color: #ddd;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    appearance: none;
+    transition: background 0.2s;
 }
 
 .button.active {
@@ -81,36 +110,60 @@ body {
     color: white;
 }
 
-/* GRID KALENDARZA */
-.grafik {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px; /* Minimalna przerwa */
-    background-color: #ccc;
-    border: 1px solid #bbb;
-    padding: 2px;
-}
-
-.day {
-    padding: 12px 2px; /* Zmniejszony padding pionowy */
-    text-align: center;
-    background-color: white;
-    font-size: 0.85rem;
-    min-height: 40px;
+/* DOLNY PANEL */
+.brigadeBar {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    color: #333;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
-.day-name {
-    background-color: #333 !important;
-    color: white;
+.brigadeBar .button {
+    flex: 1;
+}
+
+footer.legend {
+    border-top: 1px solid #ddd;
+    padding-top: 5px;
+    flex-shrink: 0;
+}
+
+#wzsBar {
+    padding: 8px;
+    margin-bottom: 5px;
+    text-align: center;
     font-weight: bold;
-    padding: 5px 2px;
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    min-height: auto;
+    font-size: 0.9rem;
+    border-radius: 4px;
+}
+
+.legendBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.legendBar div {
+    padding: 6px 2px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    flex: 1;
+    min-width: 65px;
+    text-align: center;
+}
+
+/* KOLORY */
+.shift1  { background-color: #76BC83; color: white; }
+.shift2  { background-color: #BCA676; color: white; }
+.shift3  { background-color: #768CBC; color: white; }
+.off     { background-color: #898989; color: white; }
+.holiday { background-color: #BC76AF; color: white; }
+.empty   { background-color: #f9f9f9; }
+
+/* OPTYMALIZACJA POD MOBILE */
+@media (max-width: 480px) {
+    .grafik_wrapper { gap: 4px; }
+    .day { padding: 2px; }
+    .button { padding: 12px 5px; }
 }
 
 /* KOLORY ZMIAN */
