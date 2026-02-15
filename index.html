@@ -17,164 +17,165 @@
     padding: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  .grafik {
-    filter: saturate(0.9) brightness(0.7);
-  }
-
-  body {
-  background-color: #555555;
-  }
-}
-
-@media (max-width: 480px) {
-    .grafik {
-        gap: 1px;         /* Maksymalnie wąska przerwa między komórkami */
-    }
-
-    .day {
-        min-height: 25px; /* Krótsze komórki */
-        /* font-size: 0.75rem; /* Mniejszy numer dnia */
-        padding: 1px;
-    }
-
-    .day-name {
-        font-size: 0.85rem; /* Nazwy dni (Pn, Wt...) - bardzo małe */
-        min-height: 25px;
-    }
-
-    /* Wyłączamy pogrubienie, które czasem dodaje szerokości literom */
-    .day strong {
-        font-weight: 500; 
-    }
-}
-  /* Podstawowe ustawienia */
-  .grafik_wrapper {
-    width: 95vw;
-    /* Usuń sztywne height: 90vw; */
-    min-height: auto; 
-    max-height: 100wh;
-    margin: 2vh auto; /* Użyj vh (wysokości) dla marginesu, by wycentrować w pionie */
-    max-width: 900px;
+body {
+    background-color: #f4f4f4;
     font-family: sans-serif;
+    /* Zapobiega "skakaniu" strony przy przełączaniu miesięcy */
+    overscroll-behavior: none; 
 }
 
+@media (prefers-color-scheme: dark) {
+    .grafik {
+        filter: saturate(0.9) brightness(0.8);
+    }
+    body {
+        background-color: #2c2c2c;
+        color: #eee;
+    }
+}
 
-  /* Flexbox dla nagłówka */
-  .header {
+.grafik_wrapper {
+    width: 96vw;
+    max-width: 600px; /* Nieco zwężony dla lepszej czytelności pionowej */
+    margin: 1vh auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* NAGŁÓWEK */
+.header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    gap: 15px;
-  }
+    margin-bottom: 8px; /* Zredukowany margines */
+    gap: 8px;
+}
 
-  #dateBar {
+#dateBar {
     flex-grow: 1;
     text-align: center;
-    font-size: 1.0rem;
+    font-size: 0.9rem;
     font-weight: bold;
     text-transform: uppercase;
-  }
+}
 
-  /* Grid dla kalendarza */
-  .grafik {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
-    background-color: #eee;
-    border: 1px solid #ddd;
-    padding: 10px;
-  }
-
-  /* Flexbox dla przycisków brygad */
-  .brigadeBar {
-    display: flex;
-    margin-top: 20px;
-    gap: 10px;
-  }
-
-  /* Wspólny styl dla buttonów */
-  .button {
+/* PRZYCISKI */
+.button {
     cursor: pointer;
-    padding: 15px;
+    padding: 10px 5px; /* Kompaktowe przyciski */
     border: 1px solid #333;
     background-color: white;
     font-weight: bold;
+    font-size: 0.8rem;
     transition: 0.2s;
-  }
+    appearance: none; /* Kluczowe dla Firefoxa */
+    border-radius: 4px;
+}
 
-  .brigadeBar .button {
-    flex: 1; /* Każdy przycisk brygady zajmuje tyle samo miejsca */
-  }
+.button:active {
+    background-color: #ddd;
+}
 
-  .button:hover { background-color: #f0f0f0; }
-
-  /* Klasa dla aktualnie wybranego elementu */
-  .button.active {
+.button.active {
     background-color: #333;
     color: white;
-  }
+}
 
-  /* Styl komórek kalendarza */
-  .day {
-    padding: 20px 5px;
+/* GRID KALENDARZA */
+.grafik {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px; /* Minimalna przerwa */
+    background-color: #ccc;
+    border: 1px solid #bbb;
+    padding: 2px;
+}
+
+.day {
+    padding: 12px 2px; /* Zmniejszony padding pionowy */
     text-align: center;
     background-color: white;
-    border: 1px solid #eee;
-  }
+    font-size: 0.85rem;
+    min-height: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: #333;
+}
 
-  .shift1 { background-color: #76BC83; color: white; }
-  .shift2 { background-color: #BCA676; color: white; }
-  .shift3 { background-color: #768CBC; color: white; }
-  .off    { background-color: #898989; color: white; }
-
-  .holiday {background-color: #BC76AF; color: white;}
-
-  .empty { background-color: #f9f9f9; }
-
-  .day-name {
-    background-color: #333 !important; /* Ciemne tło dla kontrastu */
+.day-name {
+    background-color: #333 !important;
     color: white;
     font-weight: bold;
-    padding: 10px 5px;
+    padding: 5px 2px;
     text-transform: uppercase;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+    min-height: auto;
+}
+
+/* KOLORY ZMIAN */
+.shift1  { background-color: #76BC83; color: white; }
+.shift2  { background-color: #BCA676; color: white; }
+.shift3  { background-color: #768CBC; color: white; }
+.off     { background-color: #898989; color: white; }
+.holiday { background-color: #BC76AF; color: white; }
+.empty   { background-color: #f9f9f9; }
+
+/* DOLNY PANEL */
+.brigadeBar {
+    display: flex;
+    margin-top: 8px;
+    gap: 5px;
+}
+
+.brigadeBar .button {
+    flex: 1;
 }
 
 footer.legend {
-    margin-top: 20px;
+    margin-top: 10px;
     border-top: 1px solid #ddd;
-    padding-top: 10px;
+    padding-top: 8px;
 }
 
-/* Styl dla paska statystyk (np. Wypracowany Czas Pracy) */
 #wzsBar {
-    
-    padding: 10px;
-    margin-bottom: 15px;
+    padding: 6px;
+    margin-bottom: 8px;
     text-align: center;
     font-weight: bold;
-    font-color: white;
+    font-size: 0.85rem;
     border-radius: 4px;
-    min-height: 20px; /* Zapewnia widoczność nawet gdy jest pusty */
 }
 
-/* Poprawa układu samej legendy kolorów */
 .legendBar {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
-    justify-content: left;
+    gap: 4px;
 }
 
 .legendBar div {
-    padding: 5px 10px;
-    font-size: 0.8rem;
+    padding: 4px;
+    font-size: 0.7rem;
     border-radius: 3px;
     flex: 1;
-    min-width: 80px;
+    min-width: 60px;
     text-align: center;
+}
+
+/* FIX DLA MAŁYCH EKRANÓW (Firefox Mobile) */
+@media (max-width: 480px) {
+    .day {
+        padding: 6px 1px;
+        min-height: 32px;
+    }
+    
+    .button {
+        padding: 8px 4px;
+    }
+
+    #dateBar {
+        font-size: 0.8rem;
+    }
 }
 
 </style>
