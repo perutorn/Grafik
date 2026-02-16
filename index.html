@@ -115,6 +115,13 @@ body {
     border-color: var(--text-dark);
 }
 
+#viewmode {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 50px; /* Aby przycisk nie skakał przy zmianie ikony */
+}
+
 /* KALENDARZ */
 .grafik {
     display: grid;
@@ -204,42 +211,108 @@ footer.legend {
 
 @media (max-width: 480px) {
     .nav-btn {
-        min-width: 70px;      /* Większy margines błędu przy klikaniu */
-        height: 55px;
+        min-width: 60px;      /* Większy margines błędu przy klikaniu */
+        height: 45px;
     }
+    
+    .mini-day {
+		font-size: 0.4rem;
+	}
+}
+
+
+
+/*----------------------------------------------------*/
+/* Kontener widoku roku */
+.year-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 miesiące w rzędzie */
+    gap: 10px;
+    padding: 5px;
+    overflow-y: auto;
+}
+
+.mini-month {
+    cursor: pointer;
+    background: white;
+    padding: 4px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.mini-month-name {
+    font-size: 0.6rem;
+    font-weight: bold;
+    text-align: center;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    background: var(--bg-datebar);
+}
+
+.mini-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+}
+
+.mini-day {
+    aspect-ratio: 1;
+    border-radius: 1px;
+    font-size: 0.4rem;
+    text-justify: center;
+    padding: auto;
+}
+
+/* Kwartalne podsumowanie */
+.quarter-stats {
+    grid-column: span 3;
+    font-size: 0.7rem;
+    background: var(--bg-datebar);
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
 }
 </style>
 
 <script>
 // --- KONFIGURACJA I STAN ---
 const cykleStart = {
-  "A": new Date(2026, 1, 23),
-  "B": new Date(2026, 1, 9),
-  "C": new Date(2026, 1, 16),  // Przykładowe daty dla C i D
-  "D": new Date(2026, 1, 30)
+    "A": new Date(2026, 1, 23),
+    "B": new Date(2026, 1, 9),
+    "C": new Date(2026, 1, 16),
+    "D": new Date(2026, 1, 30)
 };
-
-// Globalne zmienne stanu
-let currentYear = 0;
-let currentMonth = 0; // Luty
-let currentBrigade = localStorage.getItem("defaultBrigade") || 'A';
-let polishHolidays = {};
 
 const cykle = [1,1,2,2,3,3,3,4,4,1,1,2,2,2,3,3,4,4,1,1,1,2,2,3,3,4,4,4];
 const daysMillis = 86400000;
+const homeIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`;
+
+let currentYear, currentMonth;
+let currentBrigade = localStorage.getItem("defaultBrigade") || 'A';
+let polishHolidays = [];
+
+let viewmode = localStorage.getItem("mode") || "month"
 
 function init() {
-    // Podpięcie zdarzeń pod przyciski Next/Prev
-    document.getElementById('prev').onclick = () => changeMonth(-1);
-    document.getElementById('next').onclick = () => changeMonth(1);
-
+    document.getElementById('prev').onclick = () => change(-1);
+    document.getElementById('next').onclick = () => change(1);
+    
+    const viewModeBtn = document.getElementById('viewmode');
+    viewModeBtn.innerHTML = getModeIcon(viewmode);
+    
+    viewModeBtn.onclick = () => {
+		viewmode = (viewmode === 'month')? 'year' : 'month';
+		viewModeBtn.innerHTML = getModeIcon(viewmode);
+		localStorage.setItem('mode', viewmode);
+		render(currentYear, currentMonth, currentBrigade);
+	}	
+	
     const now = new Date();
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();
-
     polishHolidays = getPolishHolidays(currentYear);
-    
-    // Podpięcie zdarzeń pod przyciski brygad
+
     ['A', 'B', 'C', 'D'].forEach(id => {
         document.getElementById(id).onclick = () => {
             currentBrigade = id;
@@ -247,19 +320,60 @@ function init() {
             render(currentYear, currentMonth, currentBrigade);
         };
     });
-
+    
+    const homebtn = document.getElementById('home');
+    
+    homebtn.innerHTML = homeIcon;
+    homebtn.onclick = () => {
+		const now = new Date();
+		let nowYear = now.getFullYear();
+		let nowMonth = now.getMonth();
+		
+		if (nowYear !== currentYear) polishHolidays = getPolishHolidays(nowYear);
+	
+		viewmode = 'month';
+		localStorage.setItem("mode", viewmode);
+		
+		currentYear = nowYear;
+		currentMonth = nowMonth;
+		
+		document.getElementById('viewmode').innerHTML= getModeIcon(viewmode);
+		render(currentYear, currentMonth, currentBrigade);
+	}
+		
     render(currentYear, currentMonth, currentBrigade);
 }
 
-function changeMonth(delta) {
-    const d = new Date(currentYear, currentMonth + delta, 1);
-    if (currentYear !== d.getFullYear()) {
-      polishHolidays = getPolishHolidays(d.getFullYear());
+function getModeIcon(mode) {
+    if (mode === 'month') {
+        // Ikona siatki (widok roku)
+        return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`;
+    } else {
+        // Ikona kalendarza (widok miesiąca)
+        return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
     }
-    
-    currentYear = d.getFullYear();
-    currentMonth = d.getMonth();
-    render(currentYear, currentMonth, currentBrigade);
+}
+
+function change(delta) {
+	
+	let d = new Date()
+	switch (viewmode) {
+		case 'month':
+			d.setFullYear(currentYear, currentMonth + delta, 1);
+			break;
+		
+		case 'year':
+			d.setFullYear(currentYear + delta, currentMonth , 1);
+			break;
+	}
+	
+	if (currentYear !== d.getFullYear()) {
+		polishHolidays = getPolishHolidays(d.getFullYear());
+	}
+	
+	currentYear = d.getFullYear();
+	currentMonth = d.getMonth();
+	render(currentYear, currentMonth, currentBrigade);
 }
 
 function getEaster(year) {
@@ -275,138 +389,207 @@ function getEaster(year) {
 
 function getPolishHolidays(year) {
     let holidays = [
-      {m:0, d:1}, {m:0, d:6}, {m:4, d:1}, {m:4, d:3}, {m:7, d:15},
-      {m:10, d:1}, {m:10, d:11}, {m:11, d:24}, {m:11, d:25}, {m:11, d:26}
+        {m:0, d:1}, {m:0, d:6}, {m:4, d:1}, {m:4, d:3}, {m:7, d:15},
+        {m:10, d:1}, {m:10, d:11}, {m:11, d:24}, {m:11, d:25}, {m:11, d:26}
     ];
 
     const e = getEaster(year);
-    const moving = new Date(year, e.month, e.day);
+    const easter = new Date(year, e.month, e.day);
     
-    holidays.push({m:moving.getMonth(), d:moving.getDate()});
-    moving.setDate(moving.getDate() + 1);
-    
-    holidays.push({m: moving.getMonth(), d: moving.getDate()});
-    moving.setDate(moving.getDate() + 48);
-    
-    holidays.push({m: moving.getMonth(), d: moving.getDate()});
-    moving.setDate(moving.getDate() + 11);
-    
-    holidays.push({m:moving.getMonth(), d:moving.getDate()});
+    const addMoving = (offset) => {
+        const d = new Date(easter);
+        d.setDate(easter.getDate() + offset);
+        holidays.push({m: d.getMonth(), d: d.getDate()});
+    };
+
+    addMoving(0);  // Wielkanoc
+    addMoving(1);  // Poniedziałek Wielkanocny
+    addMoving(49); // Zielone Świątki
+    addMoving(60); // Boże Ciało
 
     return holidays;
-
 }
- 
+
+function getDayShift(timestamp, brigade) {
+    const start = cykleStart[brigade].getTime();
+    const daysDiff = Math.round((timestamp - start) / daysMillis);
+    const shiftIndex = ((daysDiff % cykle.length) + cykle.length) % cykle.length;
+    return cykle[shiftIndex];
+}
+
 function getOffDays(year, month) {
     const date = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0).getDate();
     let offDays = 0;
-    
+
     for (let i = 1; i <= lastDay; i++) {
         date.setDate(i);
-        let dayOfWeek = date.getDay(); // 0-Nd, 6-So
-        
-        // Sprawdzamy czy dany dzień to święto (poprawione d na i)
-        let isHoliday = polishHolidays.some(h => h.m === month && h.d === i);
-        
+        const dayOfWeek = date.getDay(); 
+        const isHoliday = polishHolidays.some(h => h.m === month && h.d === i);
+
         if (isHoliday) {
-            // Jeśli święto wypada w sobotę, "generuje" dodatkowy dzień wolny (przepis KP)
-            if (dayOfWeek === 6) {
-                offDays += 2; // Liczymy tę sobotę + dzień do odbioru
-            } else if (dayOfWeek === 0) {
-                offDays += 1; // Niedzielne święto nie daje dnia do odbioru w Polsce
-            } else {
-                offDays += 1; // Święto w tygodniu
-            }
-        } else {
-            // Jeśli to nie święto, ale weekend
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
-                offDays++;
-            }
+            offDays += (dayOfWeek === 6) ? 2 : 1; 
+        } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+            offDays++;
         }
     }
     return offDays;
 }
 
-function countWZS(year, month, offDaysSystem) {
-	const daysOffMonth = getOffDays(year, month);
-	const days = new Date(year, month + 1, 0).getDate();
-	
-	return daysOffMonth - offDaysSystem;
-}
-	
-	
-    
+
 function render(year, month, brigade) {
+	if (viewmode == 'month') {
+		renderMonth(year, month, brigade);
+		
+	} else {
+		renderYear(year, brigade);
+	}
+}
+
+
+function renderMonth(year, month, brigade) {
+	
+	const wzsBar = document.getElementById('wzsBar');
+    if (wzsBar) wzsBar.style.display = 'block';
+    
     const grid = document.querySelector('.grafik');
+    grid.classList.remove('year-grid');
     const dateBar = document.getElementById('dateBar');
     if (!grid || !dateBar) return;
 
-    // Aktualizacja napisu w barze daty
-    const dDisplay = new Date(year, month);
-    dateBar.innerText = dDisplay.toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
-
-    // Podświetlenie aktywnego przycisku brygady
-    document.querySelectorAll('.brigadeBar .button').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(brigade).classList.add('active');
+    dateBar.innerText = new Date(year, month).toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
+    
+    document.querySelectorAll('.brigadeBar .button').forEach(btn => btn.classList.toggle('active', btn.id === brigade));
 
     const firstDay = new Date(year, month, 1).getDay();
     const daysCounter = new Date(year, month + 1, 0).getDate();
+    const offset = firstDay === 0 ? 6 : firstDay - 1;
 
     grid.innerHTML = '';
-
-    const offset = firstDay === 0 ? 6 : firstDay - 1;
-    
-    const dniTygodnia = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'];
-    dniTygodnia.forEach(nazwa => {
-        const headerDiv = document.createElement('div');
-        headerDiv.classList.add('day', 'day-name');
-        headerDiv.innerText = nazwa;
-        grid.appendChild(headerDiv);
+    ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'].forEach(nazwa => {
+        const div = document.createElement('div');
+        div.className = 'day day-name';
+        div.innerText = nazwa;
+        grid.appendChild(div);
     });
 
     for (let i = 0; i < offset; i++) {
-        const emptyDiv = document.createElement('div');
-        emptyDiv.classList.add('empty', 'day');
-        grid.appendChild(emptyDiv);
+        const div = document.createElement('div');
+        div.className = 'empty day';
+        grid.appendChild(div);
     }
-    
-    // Obliczamy różnicę dni (używając Math.round dla bezpieczeństwa zmian czasu)
-    const targetDate = new Date(year, month, 1);
-    const daysDiff = Math.round((targetDate - cykleStart[brigade]) / daysMillis);
-    const cykleDay = ((daysDiff % cykle.length) + cykle.length) % cykle.length;
+
     let offDaysSystem = 0;
+    const targetDate = new Date(year, month, 1);
 
     for (let d = 1; d <= daysCounter; d++) {
+        targetDate.setDate(d);
         const dayDiv = document.createElement('div');
-        dayDiv.classList.add('day');
+        dayDiv.className = 'day';
         dayDiv.innerHTML = `<strong>${d}</strong>`;
 
-        let isHoliday = polishHolidays.some(h => h.m === month && h.d === d);
+        const isHoliday = polishHolidays.some(h => h.m === month && h.d === d);
 
         if (isHoliday) {
-          dayDiv.classList.add('holiday');
-          offDaysSystem++;
+            dayDiv.classList.add('holiday');
+            offDaysSystem++;
         } else {
-          const shiftIndex = (cykleDay + (d - 1)) % cykle.length;
-          const shiftType = cykle[shiftIndex];
-
-          if (shiftType === 1) dayDiv.classList.add('shift1');
-          else if (shiftType === 2) dayDiv.classList.add('shift2');
-          else if (shiftType === 3) dayDiv.classList.add('shift3');
-          else {
-			  dayDiv.classList.add('off');
-			  offDaysSystem++;
-		  }
+            const shiftType = getDayShift(targetDate.getTime(), brigade);
+            if (shiftType < 4) dayDiv.classList.add(`shift${shiftType}`);
+            else {
+                dayDiv.classList.add('off');
+                offDaysSystem++;
+            }
         }
         grid.appendChild(dayDiv);
     }
+
+    const wzs = getOffDays(year, month) - offDaysSystem;
+    document.getElementById('wzsBar').innerText = `WZS: ${wzs}`;
+}
+
+function renderYear(year, brigade) {
+	
+	const wzsBar = document.getElementById('wzsBar');
+    if (wzsBar) wzsBar.style.display = 'none';
     
-    let wzsBar = document.getElementById('wzsBar');
-    wzsBar.innerHTML = '';
+    const grid = document.querySelector('.grafik');
+    grid.classList.add('year-grid');// Zmieniamy klasę na roczną
+    grid.innerHTML = '';
     
-    let wzs = countWZS(year, month, offDaysSystem);
-    wzsBar.innerHTML = `WZS: ${wzs}`;
+    document.getElementById('dateBar').innerHTML = year;
+
+    document.querySelectorAll('.brigadeBar .button').forEach(btn => btn.classList.toggle('active', btn.id === brigade));
+
+    let targetDate = new Date(year, 0, 1);
+    let yearlyHolidays = getPolishHolidays(year);
+
+    for (let q = 0; q < 4; q++) { // 4 kwartały
+        let qOffDaysSystem = 0;
+        let qOffDaysNorm = 0;
+
+        for (let m = q * 3; m < (q * 3) + 3; m++) {
+            const monthContainer = document.createElement('div');
+            monthContainer.className = 'mini-month';
+            monthContainer.onclick = () => {
+                currentMonth = m;
+                viewmode = 'month';
+                console.log("click");
+                render(currentYear, currentMonth, currentBrigade);
+            };
+
+            const monthName = document.createElement('div');
+            monthName.className = 'mini-month-name';
+            monthName.innerText = new Date(year, m).toLocaleString('pl', {month: 'short'});
+            monthContainer.appendChild(monthName);
+
+            const daysGrid = document.createElement('div');
+            daysGrid.className = 'mini-days-grid';
+
+            const firstDay = new Date(year, m, 1).getDay();
+            const daysInMonth = new Date(year, m + 1, 0).getDate();
+            const offset = firstDay === 0 ? 6 : firstDay - 1;
+
+            // Puste dni na początku
+            for (let i = 0; i < offset; i++) {
+                const empty = document.createElement('div');
+                daysGrid.appendChild(empty);
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                targetDate.setFullYear(year, m, d);
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'mini-day';
+
+                const isHoliday = yearlyHolidays.some(h => h.m === m && h.d === d);
+                const dayOfWeek = targetDate.getDay();
+
+                if (isHoliday) {
+                    dayDiv.classList.add('holiday');
+                    qOffDaysSystem++;
+                    qOffDaysNorm += (dayOfWeek === 6) ? 2 : 1;
+                } else {
+                    const shift = getDayShift(targetDate.getTime(), brigade);
+                    if (shift < 4) dayDiv.classList.add(`shift${shift}`);
+                    else {
+                        dayDiv.classList.add('off');
+                        qOffDaysSystem++;
+                    }
+                    if (dayOfWeek === 0 || dayOfWeek === 6) qOffDaysNorm++;
+                }
+                dayDiv.innerHTML = d;
+                daysGrid.appendChild(dayDiv);
+            }
+            monthContainer.appendChild(daysGrid);
+            grid.appendChild(monthContainer);
+        }
+
+        // Dodanie paska kwartału
+        const qBar = document.createElement('div');
+        qBar.className = 'quarter-stats';
+        qBar.innerHTML = `<span>KWARTAŁ ${q+1}</span> <span>WZS: ${qOffDaysNorm - qOffDaysSystem}</span>`;
+        grid.appendChild(qBar);
+    }
 }
 </script>
 </head>
@@ -415,6 +598,8 @@ function render(year, month, brigade) {
   <div class="header">
   <button class="button nav-btn" id="prev">&#10094;</button>
   <div id="dateBar"></div>
+  <button class="button nav-btn" id="home"></button>
+  <button class="button nav-btn" id="viewmode"></button>
   <button class="button nav-btn" id="next">&#10095;</button>
 </div>
   
