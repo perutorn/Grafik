@@ -14,282 +14,289 @@
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="manifest" href="manifest.json">
 <style>
+/* 1. KONFIGURACJA I ZMIENNE (Single Source of Truth) */
 :root {
-    /* Wyraźne, energetyczne, ale profesjonalne */
-    --color-shift1: #2ecc71;   /* Soczysta zieleń - kojarzy się z działaniem */
-    --color-shift2: #f39c12;   /* Ciepły bursztyn - dobrze widoczny */
-    --color-shift3: #3498db;   /* Solidny niebieski - spokój nocnej zmiany */
-    --color-off: #cbd5e0;      /* Mocniejszy szary - wyraźnie mówi "tu nie pracujesz" */
-    --color-holiday: #e74c3c;  /* Wyrazista czerwień - ostrzeżenie o święcie */
+    /* Kolory Zmian */
+    --color-shift1: #2ecc71;
+    --color-shift2: #f39c12;
+    --color-shift3: #3498db;
+    --color-off: #edf2f7;
+    --color-holiday: #e74c3c;
+    --color-empty: rgba(203, 213, 224, 0.1);
     
-    --text-light: #ffffff;
-    --text-dark: #2d3748;
+    /* System Kolorów UI - Jasny */
+    --bg-page: #f8fafc;
+    --bg-datebar: #ffffff;
+    --bg-button: #ffffff;
+    --text-main: #2d3748;
+    --text-on-dark: #ffffff;
+    --border-color: #cbd5e0;
     
-    --bg-page: #f8fafc;        /* Twoje bazowe jasne tło */
-    --bg-datebar: #f1f5f9;     /* Ton ciemniejszy dla DateBar */
-    --text-date: #2d3748;
+    /* Geometria */
+    --radius-main: 12px;
+    --radius-day: 6px;
+    --touch-target: 48px;
 }
 
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-page: #0f172a;
+        --bg-datebar: #1e293b;
+        --bg-button: #1e293b;
+        --text-main: #f1f5f9;
+        --border-color: #334155;
+        --color-off: #2d3748;
+    }
+}
+
+/* 2. RESET I BAZA */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    background-color: #f8fafc; /* Nieco lżejsze tło dla nowoczesnego looku */
-    font-family: sans-serif;
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow: hidden;
-    color: var(--text-dark);
+    line-height: 1.4;
 }
 
-@media (prefers-color-scheme: dark) {
-    /*.grafik { filter: saturate(0.8) brightness(0.8); } */
-    body { background-color: #0f172a; color: #eee; }
-    
-    :root {
-        /* Ciemny motyw */
-        --bg-page: #0f172a;    /* Twoje bazowe ciemne tło */
-        --bg-datebar: #1e293b; /* Ton jaśniejszy dla DateBar */
-        --text-date: #f1f5f9;
-    }
-}
-
-/* KONTENER GŁÓWNY */
+/* 3. LAYOUT GŁÓWNY */
 .grafik_wrapper {
-    width: 98vw;
-    max-width: 800px;
-    height: 90vh;
-    margin: 2vh auto;
+    width: 96vw;
+    max-width: 600px;
+    height: 95vh;
+    margin: 1vh auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
 }
 
-
-
-/* NAGŁÓWEK */
+/* 4. NAGŁÓWEK */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     flex-shrink: 0;
 }
 
 #dateBar {
     flex-grow: 1;
-    height: 50px;              /* Taka sama wysokość jak przyciski nav-btn */
+    height: var(--touch-target);
     display: flex;
     align-items: center;
     justify-content: center;
-    
     background-color: var(--bg-datebar);
-    color: var(--text-date);
-    
-    font-size: clamp(0.9rem, 4vw, 1.1rem);
-    font-weight: 800;          /* Mocniejsze pogrubienie dla nowoczesnego looku */
+    color: var(--text-main);
+    font-size: 1.1rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1px;       /* Lekki odstęp między literami */
-    
-    border-radius: 10px;       /* Spójne z przyciskami */
-    margin: 0 4px;             /* Odstęp od strzałek */
+    letter-spacing: 1px;
+    border-radius: var(--radius-main);
 }
 
-/* PRZYCISKI */
 .button {
     cursor: pointer;
-    padding: clamp(10px, 2vh, 18px) 10px;
-    border: 1px solid #cbd5e0;
-    background-color: white;
-    font-weight: bold;
-    font-size: 0.9rem;
-    border-radius: 10px; /* Nieco bardziej zaokrąglone */
-    appearance: none;
+    min-height: var(--touch-target);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-button);
+    color: var(--text-main);
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: var(--radius-main);
     transition: all 0.2s ease;
-    color: var(--text-dark);
 }
 
 .button.active {
-    background-color: var(--text-dark);
-    color: white;
-    border-color: var(--text-dark);
+    background-color: var(--text-main);
+    color: var(--bg-page);
+    border-color: var(--text-main);
 }
 
-#viewmode {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 50px; /* Aby przycisk nie skakał przy zmianie ikony */
-}
-
-/* KALENDARZ */
+/* 5. KALENDARZ - WIDOK MIESIĄCA */
 .grafik {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     grid-template-rows: auto repeat(6, 1fr);
-    gap: 3px; /* Nieco większy odstęp dla przejrzystości */
-    background-color: #e2e8f0;
-    border: 1px solid #cbd5e0;
-    padding: 3px;
+    gap: 4px;
+    background-color: var(--border-color);
+    padding: 4px;
     flex-grow: 1;
-    border-radius: 8px;
+    border-radius: var(--radius-main);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s linear;
+    will-change: transform, opacity;
 }
 
 .day {
-    background-color: white;
+    background-color: var(--bg-button);
+    color: var(--text-main);
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    font-size: clamp(0.9rem, 3.5vw, 1.2rem);
-    border-radius: 4px;
-    transition: transform 0.1s ease;
+    font-size: 1.1rem;
+    font-weight: 600;
+    
+    border-radius: var(--radius-day);
 }
 
 .day-name {
-    background-color: var(--text-dark) !important;
-    color: white;
-    font-weight: bold;
-    padding: 8px 0;
-    font-size: 0.7rem;
+    background-color: #1e293b !important; /* Stały ciemny kolor dla nagłówków dni */
+    color: #ffffff !important;
+    font-weight: 800;
+    font-size: 0.8rem;
+    height: 36px;
     text-transform: uppercase;
 }
 
-/* KOLORY ZMIAN OPARTE NA ZMIENNYCH */
-.shift1  { background-color: var(--color-shift1); color: var(--text-light); }
-.shift2  { background-color: var(--color-shift2); color: var(--text-light); }
-.shift3  { background-color: var(--color-shift3); color: var(--text-light); }
-
-/* Dla "Wolnego" i "Święta" używamy ciemniejszego tekstu dla lepszego kontrastu */
-.off     { background-color: var(--color-off); color: var(--text-dark); }
-.holiday { background-color: var(--color-holiday); color: var(--text-light); font-weight: bold; }
-.empty   { background-color: var(--color-empty); opacity: 0.5; }
-
-/* DOLNY PANEL */
-.brigadeBar {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
-.brigadeBar .button {
-    flex: 1;
-}
-
-footer.legend {
-    border-top: 1px solid #e2e8f0;
-    padding-top: 5px;
-    flex-shrink: 0;
-}
-
-#wzsBar {
-    padding: 8px;
-    margin-bottom: 5px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 0.9rem;
-    border-radius: 6px;
-    background-color: var(--color-off);
-    color: var(--text-dark);
-}
-
-.legendBar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.legendBar div {
-    padding: 8px 2px;
-    font-size: 0.75rem;
-    border-radius: 6px;
-    flex: 1;
-    min-width: 65px;
-    text-align: center;
-    font-weight: 600;
-}
-
-@media (max-width: 480px) {
-    .nav-btn {
-        min-width: 60px;      /* Większy margines błędu przy klikaniu */
-        height: 45px;
-    }
-    
-    .mini-day {
-		font-size: 0.4rem;
-	}
-}
-
-
-
-/*----------------------------------------------------*/
-/* Kontener widoku roku */
+/* 6. WIDOK ROKU - SPECYFIKACJA */
+/* Gdy kontener .grafik posiada klasę .year-grid (nadawaną w JS) */
 .year-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 miesiące w rzędzie */
-    gap: 10px;
-    padding: 5px;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: min-content;
     overflow-y: auto;
+    background-color: transparent;
+    border: none;
+    gap: 12px;
 }
 
 .mini-month {
-    cursor: pointer;
-    background: white;
-    padding: 4px;
-    border-radius: 4px;
+    background: var(--bg-button);
+    padding: 6px;
+    border-radius: var(--radius-day);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .mini-month-name {
-    font-size: 0.6rem;
-    font-weight: bold;
+    font-size: 0.65rem;
+    font-weight: 800;
     text-align: center;
-    text-transform: uppercase;
-    margin-bottom: 2px;
+    padding: 4px 0;
+    margin-bottom: 6px;
     background: var(--bg-datebar);
+    color: var(--text-main);
+    border-radius: 4px;
+    text-transform: uppercase;
 }
 
 .mini-days-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: auto repeat(6, 1fr);
     gap: 1px;
 }
 
 .mini-day {
     aspect-ratio: 1;
+    font-size: 0.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 1px;
-    font-size: 0.4rem;
-    text-justify: center;
-    padding: auto;
 }
 
-/* Kwartalne podsumowanie */
+/* KLUCZOWE: Pasek kwartału rozciągnięty na 3 kolumny */
 .quarter-stats {
-    grid-column: span 3;
-    font-size: 0.7rem;
-    background: var(--bg-datebar);
-    padding: 2px 8px;
-    border-radius: 4px;
+    grid-column: 1 / span 3;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-datebar);
+    color: var(--text-main);
+    padding: 10px 16px;
+    margin: 4px 0;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
 }
 
-.grafik {
-    /* ease-in-out nada naturalny, "organiczny" charakter */
-    transition: transform 0.15s ease-in-out, opacity 0.15s ease-in-out;
-    will-change: transform, opacity;
+/* 7. KOLORY ZMIAN */
+.shift1  { background-color: var(--color-shift1); color: var(--text-on-dark); }
+.shift2  { background-color: var(--color-shift2); color: var(--text-on-dark); }
+.shift3  { background-color: var(--color-shift3); color: var(--text-on-dark); }
+.off     { background-color: var(--color-off); }
+.holiday { background-color: var(--color-holiday); color: var(--text-on-dark); }
+.empty   { background-color: transparent; opacity: 0.1; }
+
+/* 8. PANEL DOLNY I LEGENDA */
+.brigadeBar {
+    display: flex;
+    gap: 10px;
+    padding: 2px 0;
 }
 
-/* Stan, gdy widok "wychodzi" (zmniejsza się i znika) */
-.zoom-out {
-    opacity: 0;
-    transform: scale(0.7); /* Zmniejsza się do połowy */
+.brigadeBar .button {
+    flex: 1;
+    font-size: 1.1rem;
 }
 
-/* Stan, gdy widok "wchodzi" (pojawia się z oddali lub przybliżenia) */
-.zoom-in {
-    opacity: 0;
-    transform: scale(1.3); /* Wchodzi z powiększenia */
+#wzsBar {
+    padding: 12px;
+    text-align: center;
+    font-weight: 800;
+    border-radius: var(--radius-main);
+    background-color: var(--bg-datebar);
+    color: var(--text-main);
+}
+
+.legendBar {
+    display: flex;
+    gap: 4px;
+}
+
+.legendBar div {
+    flex: 1;
+    padding: 10px 2px;
+    font-size: 0.7rem;
+    border-radius: var(--radius-day);
+    text-align: center;
+    font-weight: 700;
+}
+
+/* 9. ANIMACJE ZOOM */
+.zoom-out-exit { opacity: 0; transform: scale(0.92); }
+.zoom-out-enter { opacity: 0; transform: scale(1.08); }
+.zoom-in-exit  { opacity: 0; transform: scale(1.08); }
+.zoom-in-enter { opacity: 0; transform: scale(0.92); }
+
+
+/* 10. DOPASOWANIE MOBILNE */
+@media (max-width: 400px) {
+    .grafik_wrapper { gap: 8px; }
+    .day { font-size: 1rem; }
+    #dateBar { font-size: 0.9rem; }
+}
+
+/* 1. Stan bazowy legendy - musi mieć te właściwości, by móc się animować */
+footer.legend {
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.3s ease,
+                padding 0.4s ease,
+                margin 0.4s ease;
+    max-height: 500px; /* Wartość większa niż wysokość legendy */
+    opacity: 1;
+}
+
+/* 2. Nowa klasa ukrywająca - "Zwijanie" */
+.legend-collapsed {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    pointer-events: none; /* Żeby nie dało się kliknąć w "niewidzialne" przyciski */
 }
 </style>
 
@@ -313,19 +320,13 @@ let polishHolidays = [];
 let viewmode = localStorage.getItem("mode") || "month"
 
 function init() {
-    //document.getElementById('prev').onclick = () => change(-1);
-   // document.getElementById('next').onclick = () => change(1);
+	document.getElementById("legend").onclick = () => {
+		//document.getElementById("legend_info").classList.toggle("legend-hidden");
+		const f =document.getElementById("footer");
+		f.classList.toggle("legend-collapsed");
+		
+	}
     
-    const viewModeBtn = document.getElementById('viewmode');
-    viewModeBtn.innerHTML = getModeIcon(viewmode);
-    
-    viewModeBtn.onclick = () => {
-		viewmode = (viewmode === 'month')? 'year' : 'month';
-		viewModeBtn.innerHTML = getModeIcon(viewmode);
-		localStorage.setItem('mode', viewmode);
-		render(currentYear, currentMonth, currentBrigade);
-	}	
-	
     const now = new Date();
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();
@@ -338,6 +339,12 @@ function init() {
             render(currentYear, currentMonth, currentBrigade);
         };
     });
+    
+    const toogleLegend = () => {
+		const f =document.getElementById("footer");
+		f.classList.toggle("legend-collapsed");
+		console.log("click");
+	}
     
     const homebtn = document.getElementById('home');
     
@@ -355,7 +362,6 @@ function init() {
 		currentYear = nowYear;
 		currentMonth = nowMonth;
 		
-		document.getElementById('viewmode').innerHTML= getModeIcon(viewmode);
 		render(currentYear, currentMonth, currentBrigade);
 	}
 
@@ -378,38 +384,29 @@ function init() {
 	}, {passive: true});
 
 	function handleSwipe() {
-		const diffX = touchEndX - touchStartX;
-		const diffY = touchEndY - touchStartY;
-		const threshold = 70; // Czułość
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+    const threshold = 70;
 
-		// Sprawdzamy, która składowa wektora przesunięcia jest większa
-		if (Math.abs(diffX) > Math.abs(diffY)) {
-			// RUCH POZIOMY (Lewo-Prawo)
-			if (Math.abs(diffX) > threshold) {
-				if (diffX < 0) change(1);  // Następny miesiąc
-				else change(-1);           // Poprzedni miesiąc
-			}
-		} else {
-			// RUCH PIONOWY (Góra-Dół)
-			if (Math.abs(diffY) > threshold) {
-				if (diffY < 0) {
-					// Swipe w górę -> Następny rok
-					if (viewmode === 'year') {
-						viewmode = 'month';
-						localStorage.setItem('mode', viewmode);
-						render(currentYear, currentMonth, currentBrigade);
-					}
-				} else {
-					// Swipe w dół -> Poprzedni rok
-					if (viewmode === 'month') {
-						viewmode = 'year';
-						localStorage.setItem('mode', viewmode);
-						render(currentYear, currentMonth, currentBrigade);
-					}
-				}
-			}
-		}
-	}
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        // LEWO-PRAWO (Miesiące/Lata)
+        if (Math.abs(diffX) > threshold) {
+            change(diffX < 0 ? 1 : -1);
+        }
+    } else {
+        // GÓRA-DÓŁ (Zmiana Widoku)
+        if (Math.abs(diffY) > threshold) {
+            const oldMode = viewmode;
+            viewmode = (diffY < 0) ? 'year' : 'month'; // Góra -> Rok, Dół -> Miesiąc
+            
+            if (oldMode !== viewmode) {
+                // Wywołujemy render z informacją o kierunku zoomu
+                const direction = (viewmode === 'year') ? 'zoom-in' : 'zoom-out';
+                render(currentYear, currentMonth, currentBrigade, direction);
+            }
+        }
+    }
+}
 		
     render(currentYear, currentMonth, currentBrigade);
 }
@@ -421,22 +418,6 @@ function getModeIcon(mode) {
     } else {
         // Ikona kalendarza (widok miesiąca)
         return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
-    }
-}
-
-
-function handleSwipe() {
-    const swipeLength = touchEndX - touchStartX;
-    const threshold = 70; // Czułość w pikselach
-
-    if (Math.abs(swipeLength) > threshold) {
-        if (swipeLength < 0) {
-            // Przesunięcie w lewo -> Następny (przód)
-            change(1);
-        } else {
-            // Przesunięcie w prawo -> Poprzedni (tył)
-            change(-1);
-        }
     }
 }
 
@@ -522,48 +503,41 @@ function getOffDays(year, month) {
     return offDays;
 }
 
-
-function render_old(year, month, brigade) {
-	if (viewmode == 'month') {
-		renderMonth(year, month, brigade);
-		
-	} else {
-		renderYear(year, brigade);
-	}
-}
-
-function render(year, month, brigade) {
+function render(year, month, brigade, animationType = null) {
     const grid = document.querySelector('.grafik');
-    
-    // 1. Decydujemy o kierunku animacji
-    // Jeśli wchodzimy w tryb roku -> oddalamy (zoom-out)
-    // Jeśli wchodzimy w tryb miesiąca -> przybliżamy (zoom-in)
-    const animationClass = (viewmode === 'year') ? 'zoom-out' : 'zoom-in';
-    
-    grid.classList.add(animationClass);
+    if (!grid) return;
 
-    // 2. Czekamy na wykonanie animacji (300ms zgodnie z CSS)
+    // SCENARIUSZ A: Brak animacji (np. szybka zmiana miesiąca lewo-prawo)
+    if (!animationType) {
+        if (viewmode === 'month') renderMonth(year, month, brigade);
+        else renderYear(year, brigade);
+        return;
+    }
+
+    // SCENARIUSZ B: Animacja (np. góra-dół / zmiana widoku)
+    // 1. Dodajemy klasę wyjścia (np. zoom-out-exit)
+    grid.classList.add(`${animationType}-exit`);
+
     setTimeout(() => {
-        // Czyścimy klasy przed nowym renderem
-        grid.classList.remove('zoom-out', 'zoom-in');
+        // 2. Czyścimy klasę wyjścia
+        grid.classList.remove(`${animationType}-exit`);
         
-        // Renderujemy nową treść (Twoje szybkie metody)
+        // 3. Renderujemy nową treść (Twoje szybkie metody stringowe)
         if (viewmode === 'month') {
             renderMonth(year, month, brigade);
         } else {
             renderYear(year, brigade);
         }
 
-        // 3. Trick: Aby animacja "wejścia" zadziałała, musimy na chwilę 
-        // ustawić stan przeciwny i go usunąć w następnej klatce
-        const enterClass = (viewmode === 'year') ? 'zoom-in' : 'zoom-out';
-        grid.classList.add(enterClass);
+        // 4. Ustawiamy stan startowy dla wejścia (np. zoom-out-enter)
+        grid.classList.add(`${animationType}-enter`);
         
-        // Force reflow - mały trik inżynierski, żeby przeglądarka "zauważyła" zmianę
+        // Force reflow - "puknięcie" przeglądarki, żeby zauważyła zmianę stanu
         grid.offsetHeight; 
 
-        grid.classList.remove(enterClass);
-    }, 300);
+        // 5. Usuwamy klasę, co uruchamia płynny powrót do skali 1:1 i pełnej opacity
+        grid.classList.remove(`${animationType}-enter`);
+    }, 200); // Skróciłem do 200ms dla lepszej dynamiki
 }
 
 function renderMonth(year, month, brigade) {
@@ -696,7 +670,7 @@ function renderYear(year, brigade) {
                     }
                     if (dayOfWeek === 0 || dayOfWeek === 6) qOffDaysNorm++;
                 }
-                daysHtml += `<div class="mini-day ${shiftClass}"></div>`;
+                daysHtml += `<div class="mini-day ${shiftClass}">${d}</div>`;
             }
 
             const monthName = new Date(year, m).toLocaleString('pl', { month: 'short' });
@@ -718,7 +692,6 @@ function renderYear(year, brigade) {
 
     grid.innerHTML = fullYearHtml; // Jeden render dla całego roku
 }
-
 
 
 if ('serviceWorker' in navigator) {
@@ -758,8 +731,7 @@ function runBenchmark() {
 <div class="grafik_wrapper">
   <div class="header">
   <div id="dateBar"></div>
-  <button class="button nav-btn" id="home"></button>
-  <button class="button nav-btn" id="viewmode"></button>
+  
 </div>
   
   <div class="grafik"></div>
@@ -769,10 +741,12 @@ function runBenchmark() {
     <button class="button" id="B">B</button>
     <button class="button" id="C">C</button>
     <button class="button" id="D">D</button>
+    <button class="button" id="legend">L</button>
+    <button class="button nav-btn" id="home"></button>
   </div>
-  <footer class="legend">
+  <footer class="legend" id="footer">
 	<div id="wzsBar" class="off"></div>
-	<div class="legendBar">
+	<div class="legendBar" id="legend_info">
 		<div class="shift1">Zm. 1</div>
 		<div class="shift2">Zm. 2</div>
 		<div class="shift3">Zm. 3</div>
