@@ -2,8 +2,6 @@ const CACHE_NAME = 'grafik-v1';
 const ASSETS = [
     './',
     './index.html',
-    './style.css',
-    './script.js',
     './manifest.json',
     './icon.png' // upewnij się, że masz jakąś ikonę
 ];
