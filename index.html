@@ -273,6 +273,24 @@ footer.legend {
     display: flex;
     justify-content: space-between;
 }
+
+.grafik {
+    /* ease-in-out nada naturalny, "organiczny" charakter */
+    transition: transform 0.15s ease-in-out, opacity 0.15s ease-in-out;
+    will-change: transform, opacity;
+}
+
+/* Stan, gdy widok "wychodzi" (zmniejsza się i znika) */
+.zoom-out {
+    opacity: 0;
+    transform: scale(0.7); /* Zmniejsza się do połowy */
+}
+
+/* Stan, gdy widok "wchodzi" (pojawia się z oddali lub przybliżenia) */
+.zoom-in {
+    opacity: 0;
+    transform: scale(1.3); /* Wchodzi z powiększenia */
+}
 </style>
 
 <script>
@@ -295,8 +313,8 @@ let polishHolidays = [];
 let viewmode = localStorage.getItem("mode") || "month"
 
 function init() {
-    document.getElementById('prev').onclick = () => change(-1);
-    document.getElementById('next').onclick = () => change(1);
+    //document.getElementById('prev').onclick = () => change(-1);
+   // document.getElementById('next').onclick = () => change(1);
     
     const viewModeBtn = document.getElementById('viewmode');
     viewModeBtn.innerHTML = getModeIcon(viewmode);
@@ -340,6 +358,58 @@ function init() {
 		document.getElementById('viewmode').innerHTML= getModeIcon(viewmode);
 		render(currentYear, currentMonth, currentBrigade);
 	}
+
+	let touchStartX = 0;
+	let touchStartY = 0;
+	let touchEndX = 0;
+	let touchEndY = 0;
+
+	const wrapper = document.querySelector('.grafik_wrapper');
+
+	wrapper.addEventListener('touchstart', e => {
+		touchStartX = e.changedTouches[0].screenX;
+		touchStartY = e.changedTouches[0].screenY;
+	}, {passive: true});
+
+	wrapper.addEventListener('touchend', e => {
+		touchEndX = e.changedTouches[0].screenX;
+		touchEndY = e.changedTouches[0].screenY;
+		handleSwipe();
+	}, {passive: true});
+
+	function handleSwipe() {
+		const diffX = touchEndX - touchStartX;
+		const diffY = touchEndY - touchStartY;
+		const threshold = 70; // Czułość
+
+		// Sprawdzamy, która składowa wektora przesunięcia jest większa
+		if (Math.abs(diffX) > Math.abs(diffY)) {
+			// RUCH POZIOMY (Lewo-Prawo)
+			if (Math.abs(diffX) > threshold) {
+				if (diffX < 0) change(1);  // Następny miesiąc
+				else change(-1);           // Poprzedni miesiąc
+			}
+		} else {
+			// RUCH PIONOWY (Góra-Dół)
+			if (Math.abs(diffY) > threshold) {
+				if (diffY < 0) {
+					// Swipe w górę -> Następny rok
+					if (viewmode === 'year') {
+						viewmode = 'month';
+						localStorage.setItem('mode', viewmode);
+						render(currentYear, currentMonth, currentBrigade);
+					}
+				} else {
+					// Swipe w dół -> Poprzedni rok
+					if (viewmode === 'month') {
+						viewmode = 'year';
+						localStorage.setItem('mode', viewmode);
+						render(currentYear, currentMonth, currentBrigade);
+					}
+				}
+			}
+		}
+	}
 		
     render(currentYear, currentMonth, currentBrigade);
 }
@@ -351,6 +421,22 @@ function getModeIcon(mode) {
     } else {
         // Ikona kalendarza (widok miesiąca)
         return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
+    }
+}
+
+
+function handleSwipe() {
+    const swipeLength = touchEndX - touchStartX;
+    const threshold = 70; // Czułość w pikselach
+
+    if (Math.abs(swipeLength) > threshold) {
+        if (swipeLength < 0) {
+            // Przesunięcie w lewo -> Następny (przód)
+            change(1);
+        } else {
+            // Przesunięcie w prawo -> Poprzedni (tył)
+            change(-1);
+        }
     }
 }
 
@@ -437,7 +523,7 @@ function getOffDays(year, month) {
 }
 
 
-function render(year, month, brigade) {
+function render_old(year, month, brigade) {
 	if (viewmode == 'month') {
 		renderMonth(year, month, brigade);
 		
@@ -446,17 +532,49 @@ function render(year, month, brigade) {
 	}
 }
 
+function render(year, month, brigade) {
+    const grid = document.querySelector('.grafik');
+    
+    // 1. Decydujemy o kierunku animacji
+    // Jeśli wchodzimy w tryb roku -> oddalamy (zoom-out)
+    // Jeśli wchodzimy w tryb miesiąca -> przybliżamy (zoom-in)
+    const animationClass = (viewmode === 'year') ? 'zoom-out' : 'zoom-in';
+    
+    grid.classList.add(animationClass);
+
+    // 2. Czekamy na wykonanie animacji (300ms zgodnie z CSS)
+    setTimeout(() => {
+        // Czyścimy klasy przed nowym renderem
+        grid.classList.remove('zoom-out', 'zoom-in');
+        
+        // Renderujemy nową treść (Twoje szybkie metody)
+        if (viewmode === 'month') {
+            renderMonth(year, month, brigade);
+        } else {
+            renderYear(year, brigade);
+        }
+
+        // 3. Trick: Aby animacja "wejścia" zadziałała, musimy na chwilę 
+        // ustawić stan przeciwny i go usunąć w następnej klatce
+        const enterClass = (viewmode === 'year') ? 'zoom-in' : 'zoom-out';
+        grid.classList.add(enterClass);
+        
+        // Force reflow - mały trik inżynierski, żeby przeglądarka "zauważyła" zmianę
+        grid.offsetHeight; 
+
+        grid.classList.remove(enterClass);
+    }, 300);
+}
 
 function renderMonth(year, month, brigade) {
-	
-	const wzsBar = document.getElementById('wzsBar');
-    if (wzsBar) wzsBar.style.display = 'block';
-    
+    const wzsBar = document.getElementById('wzsBar');
     const grid = document.querySelector('.grafik');
-    grid.classList.remove('year-grid');
     const dateBar = document.getElementById('dateBar');
+    
     if (!grid || !dateBar) return;
+    if (wzsBar) wzsBar.style.display = 'block';
 
+    grid.classList.remove('year-grid');
     dateBar.innerText = new Date(year, month).toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
     
     document.querySelectorAll('.brigadeBar .button').forEach(btn => btn.classList.toggle('active', btn.id === brigade));
@@ -465,142 +583,183 @@ function renderMonth(year, month, brigade) {
     const daysCounter = new Date(year, month + 1, 0).getDate();
     const offset = firstDay === 0 ? 6 : firstDay - 1;
 
-    grid.innerHTML = '';
+    // Zaczynamy budować bufor HTML
+    let html = '';
+
+    // 1. Nazwy dni
     ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'].forEach(nazwa => {
-        const div = document.createElement('div');
-        div.className = 'day day-name';
-        div.innerText = nazwa;
-        grid.appendChild(div);
+        html += `<div class="day day-name">${nazwa}</div>`;
     });
 
+    // 2. Puste dni (offset)
     for (let i = 0; i < offset; i++) {
-        const div = document.createElement('div');
-        div.className = 'empty day';
-        grid.appendChild(div);
+        html += `<div class="empty day"></div>`;
     }
 
+    // 3. Logika dni miesiąca
     let offDaysSystem = 0;
     const targetDate = new Date(year, month, 1);
 
     for (let d = 1; d <= daysCounter; d++) {
         targetDate.setDate(d);
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'day';
-        dayDiv.innerHTML = `<strong>${d}</strong>`;
-
         const isHoliday = polishHolidays.some(h => h.m === month && h.d === d);
+        let shiftClass = '';
 
         if (isHoliday) {
-            dayDiv.classList.add('holiday');
+            shiftClass = 'holiday';
             offDaysSystem++;
         } else {
             const shiftType = getDayShift(targetDate.getTime(), brigade);
-            if (shiftType < 4) dayDiv.classList.add(`shift${shiftType}`);
-            else {
-                dayDiv.classList.add('off');
+            if (shiftType < 4) {
+                shiftClass = `shift${shiftType}`;
+            } else {
+                shiftClass = 'off';
                 offDaysSystem++;
             }
         }
-        grid.appendChild(dayDiv);
+        
+        // Budujemy wiersz HTML dla danego dnia
+        html += `<div class="day ${shiftClass}"><strong>${d}</strong></div>`;
     }
 
+    // JEDEN strzał do DOM - podmieniamy całą siatkę naraz
+    grid.innerHTML = html;
+
+    // Aktualizacja paska WZS
     const wzs = getOffDays(year, month) - offDaysSystem;
     document.getElementById('wzsBar').innerText = `WZS: ${wzs}`;
 }
 
+// Pomocnicza funkcja globalna, aby wywołanie ze stringa HTML działało
+window.goToMonth = (m) => {
+    currentMonth = m;
+    viewmode = 'month';
+    const viewModeBtn = document.getElementById('viewmode');
+    if (viewModeBtn) viewModeBtn.innerHTML = getModeIcon('month');
+    localStorage.setItem('mode', 'month');
+    render(currentYear, currentMonth, currentBrigade);
+};
+
 function renderYear(year, brigade) {
-	
-	const wzsBar = document.getElementById('wzsBar');
-    if (wzsBar) wzsBar.style.display = 'none';
-    
+    const wzsBar = document.getElementById('wzsBar');
     const grid = document.querySelector('.grafik');
-    grid.classList.add('year-grid');// Zmieniamy klasę na roczną
-    grid.innerHTML = '';
-    
-    document.getElementById('dateBar').innerHTML = year;
+    const dateBar = document.getElementById('dateBar');
 
-    document.querySelectorAll('.brigadeBar .button').forEach(btn => btn.classList.toggle('active', btn.id === brigade));
+    if (wzsBar) wzsBar.style.display = 'none';
+    if (!grid || !dateBar) return;
 
-    let targetDate = new Date(year, 0, 1);
+    grid.classList.add('year-grid');
+    dateBar.innerHTML = year;
+
+    document.querySelectorAll('.brigadeBar .button').forEach(btn => 
+        btn.classList.toggle('active', btn.id === brigade)
+    );
+
     let yearlyHolidays = getPolishHolidays(year);
+    let fullYearHtml = ''; // Nasz "potężny string"
 
-    for (let q = 0; q < 4; q++) { // 4 kwartały
+    for (let q = 0; q < 4; q++) {
         let qOffDaysSystem = 0;
         let qOffDaysNorm = 0;
+        let quarterMonthsHtml = '';
 
         for (let m = q * 3; m < (q * 3) + 3; m++) {
-            const monthContainer = document.createElement('div');
-            monthContainer.className = 'mini-month';
-            monthContainer.onclick = () => {
-                currentMonth = m;
-                viewmode = 'month';
-                console.log("click");
-                render(currentYear, currentMonth, currentBrigade);
-            };
-
-            const monthName = document.createElement('div');
-            monthName.className = 'mini-month-name';
-            monthName.innerText = new Date(year, m).toLocaleString('pl', {month: 'short'});
-            monthContainer.appendChild(monthName);
-
-            const daysGrid = document.createElement('div');
-            daysGrid.className = 'mini-days-grid';
-
             const firstDay = new Date(year, m, 1).getDay();
             const daysInMonth = new Date(year, m + 1, 0).getDate();
             const offset = firstDay === 0 ? 6 : firstDay - 1;
+            
+            let daysHtml = '';
 
-            // Puste dni na początku
+            // Puste dni
             for (let i = 0; i < offset; i++) {
-                const empty = document.createElement('div');
-                daysGrid.appendChild(empty);
+                daysHtml += `<div></div>`; 
             }
 
+            // Dni miesiąca
             for (let d = 1; d <= daysInMonth; d++) {
-                targetDate.setFullYear(year, m, d);
-                const dayDiv = document.createElement('div');
-                dayDiv.className = 'mini-day';
-
+                const tDate = new Date(year, m, d);
                 const isHoliday = yearlyHolidays.some(h => h.m === m && h.d === d);
-                const dayOfWeek = targetDate.getDay();
+                const dayOfWeek = tDate.getDay();
+                let shiftClass = '';
 
                 if (isHoliday) {
-                    dayDiv.classList.add('holiday');
+                    shiftClass = 'holiday';
                     qOffDaysSystem++;
                     qOffDaysNorm += (dayOfWeek === 6) ? 2 : 1;
                 } else {
-                    const shift = getDayShift(targetDate.getTime(), brigade);
-                    if (shift < 4) dayDiv.classList.add(`shift${shift}`);
-                    else {
-                        dayDiv.classList.add('off');
+                    const shift = getDayShift(tDate.getTime(), brigade);
+                    if (shift < 4) {
+                        shiftClass = `shift${shift}`;
+                    } else {
+                        shiftClass = 'off';
                         qOffDaysSystem++;
                     }
                     if (dayOfWeek === 0 || dayOfWeek === 6) qOffDaysNorm++;
                 }
-                dayDiv.innerHTML = d;
-                daysGrid.appendChild(dayDiv);
+                daysHtml += `<div class="mini-day ${shiftClass}"></div>`;
             }
-            monthContainer.appendChild(daysGrid);
-            grid.appendChild(monthContainer);
+
+            const monthName = new Date(year, m).toLocaleString('pl', { month: 'short' });
+            quarterMonthsHtml += `
+                <div class="mini-month" onclick="goToMonth(${m})">
+                    <div class="mini-month-name">${monthName}</div>
+                    <div class="mini-days-grid">${daysHtml}</div>
+                </div>`;
         }
 
-        // Dodanie paska kwartału
-        const qBar = document.createElement('div');
-        qBar.className = 'quarter-stats';
-        qBar.innerHTML = `<span>KWARTAŁ ${q+1}</span> <span>WZS: ${qOffDaysNorm - qOffDaysSystem}</span>`;
-        grid.appendChild(qBar);
+        // Składamy kwartał w całość
+        fullYearHtml += quarterMonthsHtml;
+        fullYearHtml += `
+            <div class="quarter-stats">
+                <span>KWARTAŁ ${q + 1}</span> 
+                <span>WZS: ${qOffDaysNorm - qOffDaysSystem}</span>
+            </div>`;
     }
+
+    grid.innerHTML = fullYearHtml; // Jeden render dla całego roku
+}
+
+
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js') // kropka-slash jest ważna dla GitHub Pages
+            .then(reg => console.log('SW zarejestrowany!', reg.scope))
+            .catch(err => console.log('Błąd SW:', err));
+    });
+}
+
+
+function runBenchmark() {
+    const iterations = 100;
+    const start = performance.now();
+    
+    for (let i = 0; i < iterations; i++) {
+        renderYear(currentYear, currentBrigade);
+    }
+    
+    const end = performance.now();
+    const totalTime = end - start;
+    const averageTime = totalTime / iterations;
+    
+    console.log(`--- BENCHMARK RENDEROWANIA ROKU ---`);
+    console.log(`Liczba powtórzeń: ${iterations}`);
+    console.log(`Całkowity czas: ${totalTime.toFixed(2)} ms`);
+    console.log(`Średni czas jednego renderu: ${averageTime.toFixed(4)} ms`);
+    
+    // Dodatkowy wskaźnik "Budget" dla 60 FPS
+    const budget60fps = 16.67; 
+    const budgetUsed = (averageTime / budget60fps) * 100;
+    console.log(`Zużycie budżetu klatki (16.67ms): ${budgetUsed.toFixed(2)}%`);
 }
 </script>
 </head>
 <body onload="init()">
 <div class="grafik_wrapper">
   <div class="header">
-  <button class="button nav-btn" id="prev">&#10094;</button>
   <div id="dateBar"></div>
   <button class="button nav-btn" id="home"></button>
   <button class="button nav-btn" id="viewmode"></button>
-  <button class="button nav-btn" id="next">&#10095;</button>
 </div>
   
   <div class="grafik"></div>
