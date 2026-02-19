@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Grafik</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<<meta name="mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -55,6 +55,9 @@
     margin: 0;
     padding: 0;
     -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; /* iOS Safari */
+    user-select: none;         /* Standard */
+    -webkit-touch-callout: none; /* Blokuje menu przy długim dotknięciu na iOS */
 }
 
 body {
@@ -69,8 +72,8 @@ body {
 .grafik_wrapper {
     width: 96vw;
     max-width: 600px;
-    height: 95vh;
-    margin: 1vh auto;
+    height: 93vh;
+    margin: 2vh auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -146,6 +149,7 @@ body {
     font-weight: 600;
     
     border-radius: var(--radius-day);
+    animation: fadeInScale 0.3s ease-out;
 }
 
 .day-name {
@@ -167,6 +171,15 @@ body {
     background-color: transparent;
     border: none;
     gap: 12px;
+    
+    /* Ukrycie paska przewijania dla Chrome, Safari i nowych Edge */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    -webkit-overflow-scrolling: touch; /* Dodaje płynność przewijania na iOS */
+}
+
+.year-grid::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 .mini-month {
@@ -174,6 +187,8 @@ body {
     padding: 6px;
     border-radius: var(--radius-day);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    
+    animation: fadeInScale 0.3s ease-out;
 }
 
 .mini-month-name {
@@ -186,6 +201,12 @@ body {
     color: var(--text-main);
     border-radius: 4px;
     text-transform: uppercase;
+}
+
+.mini-month:active {
+    background-color: var(--border-color);
+    transform: scale(0.95);
+    transition: transform 0.1s;
 }
 
 .mini-days-grid {
@@ -202,6 +223,7 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 1px;
+   
 }
 
 /* KLUCZOWE: Pasek kwartału rozciągnięty na 3 kolumny */
@@ -252,7 +274,7 @@ body {
 .legendBar {
     display: flex;
     gap: 4px;
-}
+ }
 
 .legendBar div {
     flex: 1;
@@ -269,10 +291,21 @@ body {
 .zoom-in-exit  { opacity: 0; transform: scale(1.08); }
 .zoom-in-enter { opacity: 0; transform: scale(0.92); }
 
+@keyframes fadeInScale {
+    from { 
+        opacity: 0.5; 
+        transform: scale(0.90); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
 
 /* 10. DOPASOWANIE MOBILNE */
 @media (max-width: 400px) {
-    .grafik_wrapper { gap: 8px; }
+    .grafik_wrapper { gap: 8px; height: 95vh;}
     .day { font-size: 1rem; }
     #dateBar { font-size: 0.9rem; }
 }
@@ -320,6 +353,8 @@ let polishHolidays = [];
 let viewmode = localStorage.getItem("mode") || "month"
 
 function init() {
+	
+	document.addEventListener('contextmenu', event => event.preventDefault());
 	document.getElementById("legend").onclick = () => {
 		//document.getElementById("legend_info").classList.toggle("legend-hidden");
 		const f =document.getElementById("footer");
@@ -383,26 +418,38 @@ function init() {
 		handleSwipe();
 	}, {passive: true});
 
-	function handleSwipe() {
+function handleSwipe() {
     const diffX = touchEndX - touchStartX;
     const diffY = touchEndY - touchStartY;
     const threshold = 70;
+    const grid = document.querySelector('.grafik');
 
     if (Math.abs(diffX) > Math.abs(diffY)) {
-        // LEWO-PRAWO (Miesiące/Lata)
+        // LEWO-PRAWO: Zmiana miesięcy/lat bez zmian
         if (Math.abs(diffX) > threshold) {
             change(diffX < 0 ? 1 : -1);
         }
     } else {
-        // GÓRA-DÓŁ (Zmiana Widoku)
+        // GÓRA-DÓŁ: Zmiana widoku
         if (Math.abs(diffY) > threshold) {
             const oldMode = viewmode;
-            viewmode = (diffY < 0) ? 'year' : 'month'; // Góra -> Rok, Dół -> Miesiąc
-            
+
+            if (diffY < 0) {
+                // Swipe w górę -> zawsze wchodzimy w tryb roku
+                viewmode = 'year';
+            } else {
+                // Swipe w dół -> wracamy do miesiąca TYLKO gdy jesteśmy na samej górze
+                if (viewmode === 'year' && grid.scrollTop > 0) {
+                    return; // Przerywamy, użytkownik po prostu przewija listę
+                }
+                viewmode = 'month';
+            }
+
             if (oldMode !== viewmode) {
-                // Wywołujemy render z informacją o kierunku zoomu
                 const direction = (viewmode === 'year') ? 'zoom-in' : 'zoom-out';
                 render(currentYear, currentMonth, currentBrigade, direction);
+                // Po powrocie do miesiąca resetujemy scroll, żeby widok był czysty
+                if(viewmode === 'month') grid.scrollTop = 0;
             }
         }
     }
@@ -608,10 +655,10 @@ function renderMonth(year, month, brigade) {
 window.goToMonth = (m) => {
     currentMonth = m;
     viewmode = 'month';
-    const viewModeBtn = document.getElementById('viewmode');
-    if (viewModeBtn) viewModeBtn.innerHTML = getModeIcon('month');
+    //const viewModeBtn = document.getElementById('viewmode');
+    //if (viewModeBtn) viewModeBtn.innerHTML = getModeIcon('month');
     localStorage.setItem('mode', 'month');
-    render(currentYear, currentMonth, currentBrigade);
+    render(currentYear, currentMonth, currentBrigade, "zoom-out");
 };
 
 function renderYear(year, brigade) {
@@ -696,10 +743,33 @@ function renderYear(year, brigade) {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js') // kropka-slash jest ważna dla GitHub Pages
-            .then(reg => console.log('SW zarejestrowany!', reg.scope))
-            .catch(err => console.log('Błąd SW:', err));
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW: Zarejestrowany', reg))
+            .catch(err => console.log('SW: Błąd rejestracji', err));
     });
+}
+
+function runBenchmark() {
+    const iterations = 100;
+    const start = performance.now();
+    
+    for (let i = 0; i < iterations; i++) {
+        renderYear(currentYear, currentBrigade);
+    }
+    
+    const end = performance.now();
+    const totalTime = end - start;
+    const averageTime = totalTime / iterations;
+    
+    console.log(`--- BENCHMARK RENDEROWANIA ROKU ---`);
+    console.log(`Liczba powtórzeń: ${iterations}`);
+    console.log(`Całkowity czas: ${totalTime.toFixed(2)} ms`);
+    console.log(`Średni czas jednego renderu: ${averageTime.toFixed(4)} ms`);
+    
+    // Dodatkowy wskaźnik "Budget" dla 60 FPS
+    const budget60fps = 16.67; 
+    const budgetUsed = (averageTime / budget60fps) * 100;
+    console.log(`Zużycie budżetu klatki (16.67ms): ${budgetUsed.toFixed(2)}%`);
 }
 </script>
 </head>
