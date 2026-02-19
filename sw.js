@@ -3,7 +3,8 @@ const ASSETS = [
     './',
     './index.html',
     './manifest.json',
-    './icon.png' // upewnij się, że masz jakąś ikonę
+    './icon192.png',// upewnij się, że masz jakąś ikonę
+    './icon512.png'
 ];
 
 // 1. Instalacja - cachowanie plików
