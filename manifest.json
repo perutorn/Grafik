@@ -1,7 +1,7 @@
 {
   "name": "Grafik Zminaowy",
   "short_name": "Grafik",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
@@ -9,7 +9,8 @@
   {
     "src": "icon192.png",
     "sizes": "192x192",
-    "type": "image/png"
+    "type": "image/png",
+    "purpose":"any maskable"
   },
   {
     "src": "icon512.png",
