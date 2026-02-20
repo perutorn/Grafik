@@ -74,7 +74,7 @@ body {
     width: 96vw;
     max-width: 600px;
     height: 96vh;
-    margin: 2vh auto;
+    margin: 1vh auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -150,7 +150,7 @@ body {
     font-weight: 600;
     
     border-radius: var(--radius-day);
-    animation: fadeInScale 0.3s ease-out;
+    animation: fadeInScaleMonth 0.3s ease-out;
 }
 
 .day-name {
@@ -160,6 +160,10 @@ body {
     font-size: 0.8rem;
     height: 36px;
     text-transform: uppercase;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: var(--radius-day);
 }
 
 /* 6. WIDOK ROKU - SPECYFIKACJA */
@@ -189,7 +193,7 @@ body {
     border-radius: var(--radius-day);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     
-    animation: fadeInScale 0.3s ease-out;
+    animation: fadeInScaleYear 0.3s ease-out;
 }
 
 .mini-month-name {
@@ -238,7 +242,7 @@ body {
     padding: 10px 16px;
     margin: 4px 0;
     border-radius: 8px;
-    font-size: 0.75rem;
+    font-size: 0.6rem;
     font-weight: 800;
     text-transform: uppercase;
 }
@@ -292,9 +296,18 @@ body {
 .zoom-in-exit  { opacity: 0; transform: scale(1.08); }
 .zoom-in-enter { opacity: 0; transform: scale(0.92); }
 
-@keyframes fadeInScale {
+@keyframes fadeInScaleMonth {
     from { 
-        transform: scale(0.80); 
+        transform: scale(0.50); 
+    }
+    to { 
+        transform: scale(1); 
+    }
+}
+
+@keyframes fadeInScaleYear {
+    from { 
+        transform: scale(1.1); 
     }
     to { 
         transform: scale(1); 
@@ -609,7 +622,7 @@ function renderMonth(year, month, brigade) {
 
     // 1. Nazwy dni
     ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'].forEach(nazwa => {
-        html += `<div class="day day-name">${nazwa}</div>`;
+        html += `<div class="day-name">${nazwa}</div>`;
     });
 
     // 2. Puste dni (offset)
