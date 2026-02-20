@@ -1,10 +1,10 @@
 const CACHE_NAME = 'grafik-v1';
 const ASSETS = [
     './',
-    'index.html',
-    'manifest.json',
-    'icon192.png',// upewnij się, że masz jakąś ikonę
-    'icon512.png'
+    './index.html',
+    './manifest.json',
+    './icon192.png',// upewnij się, że masz jakąś ikonę
+    './icon512.png'
 ];
 
 // 1. Instalacja - cachowanie plików
