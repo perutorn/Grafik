@@ -434,7 +434,7 @@ function handleSwipe() {
         if (Math.abs(diffY) > threshold) {
             const oldMode = viewmode;
 
-            if (diffY > 0) {
+            if (diffY < 0) {
                 // Swipe w górę -> zawsze wchodzimy w tryb roku
                 viewmode = 'year';
             } else {
