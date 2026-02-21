@@ -1,8 +1,9 @@
 {
-  "name": "Grafik Zminaowy",
+  "name": "Grafik Zmianowy",
   "short_name": "Grafik",
   "start_url": "./index.html",
   "display": "standalone",
+  "scope": "./",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
