@@ -592,7 +592,7 @@ class App {
                 // SWIPE W GÓRĘ -> Idziemy "wyżej" (Miesiąc -> Rok)
                 if (this.state.mode === 'month') {
                     // Zabezpieczenie dla trybu Matrix: wyjdź tylko gdy scroll na górze
-                    if (this.state.view === this.#MATRIX && (cocontainer.scrollTop > 0 || container.scrollTop + container.clientHeight >= container.scrollHeight ) return;
+                    if (this.state.view === this.#MATRIX && (container.scrollTop > 0 || container.scrollTop + container.clientHeight < container.scrollHeight ) return;
                     this.state.mode = 'year';
                 }
             } else {
