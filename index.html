@@ -577,29 +577,45 @@ class App {
     const threshold = 70;
     const container = document.getElementById('mainContainer');
 
-    // 1. Oś Pozioma: Zmiana czasu (Miesiąc +/- 1 lub Rok +/- 1)
+    // 1. Oś Pozioma (Miesiąc/Rok +/- 1)
     if (Math.abs(diffX) > Math.abs(diffY)) {
         if (Math.abs(diffX) > threshold) {
             this.#changeDate(diffX < 0 ? 1 : -1);
         }
     } 
-    // 2. Oś Pionowa: Zmiana skali (Zoom In / Zoom Out)
+    // 2. Oś Pionowa (Zoom In / Zoom Out)
     else {
         if (Math.abs(diffY) > threshold) {
             const oldMode = this.state.mode;
+            
+            // Definiujemy stany krańcowe scrolla
+            // Margines 2px eliminuje błędy zaokrągleń na ekranach mobilnych
+            const isAtTop = container.scrollTop <= 2;
+            const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;
 
-            if (diffY < 0) {
-                // SWIPE W GÓRĘ -> Idziemy "wyżej" (Miesiąc -> Rok)
-                if (this.state.mode === 'month') {
-                    // Zabezpieczenie dla trybu Matrix: wyjdź tylko gdy scroll na górze
-                    if (this.state.view === this.#MATRIX && (container.scrollTop > 0 || container.scrollTop + container.clientHeight < container.scrollHeight) ) return;
-                    this.state.mode = 'year';
+            if (diffY < 0) { 
+                // SWIPE W GÓRĘ (Palec leci do góry -> próba przewinięcia w dół)
+                if (this.state.mode === 'month' && this.state.view === this.#MATRIX) {
+                    // Przejdź do roku TYLKO jeśli już jesteś na samym dole i "popychasz" dalej
+                    if (isAtBottom) {
+                        this.state.mode = 'year';
+                    } else {
+                        return; // Jeśli nie jesteś na dole, pozwól na zwykły scroll
+                    }
                 }
-            } else {
-                // SWIPE W DÓŁ -> Idziemy "niżej" (Rok -> Miesiąc)
-                if (this.state.mode === 'year') {
-                    // Zabezpieczenie dla widoku Roku (jeśli ma scroll)
-                    if (container.scrollTop > 0) return;
+            } else { 
+                // SWIPE W DÓŁ (Palec leci w dół -> próba przewinięcia w górę)
+                if (this.state.mode === 'month' && this.state.view === this.#MATRIX) {
+                    // Przejdź do roku TYLKO jeśli jesteś na samej górze i "ciągniesz" dalej
+                    if (isAtTop) {
+                        this.state.mode = 'year';
+                    } else {
+                        return; // Jeśli nie jesteś na górze, pozwól na zwykły scroll
+                    }
+                }
+                
+                // Logika powrotu z Roku do Miesiąca (opcjonalnie)
+                if (this.state.mode === 'year' && isAtTop) {
                     this.state.mode = 'month';
                 }
             }
@@ -611,6 +627,7 @@ class App {
         }
     }
 }
+
     #changeDate(delta) {
         if (this.state.mode === 'month') {
             const d = new Date(this.state.year, this.state.month + delta, 1);
