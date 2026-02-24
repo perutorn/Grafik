@@ -571,7 +571,54 @@ class App {
 		}
     }
 
-   #handleSwipe() {
+
+    #changeDate(delta) {
+        if (this.state.mode === 'month') {
+            const d = new Date(this.state.year, this.state.month + delta, 1);
+            this.state.year = d.getFullYear();
+            this.state.month = d.getMonth();
+        } else {
+            this.state.year += delta;
+        }
+        
+        // Aktualizacja świąt przy zmianie roku
+        this.holidays = this.engine.getPolishHolidays(this.state.year);
+        this.refresh();
+    }
+
+    goHome() {
+        const now = new Date();
+        this.state.year = now.getFullYear();
+        this.state.month = now.getMonth();
+        this.state.mode = 'month';
+        this.holidays = this.engine.getPolishHolidays(this.state.year);
+        this.refresh();
+    }
+
+    refresh() {
+		// Czyścimy klasy i ustawiamy bazę
+		const container = document.getElementById('mainContainer');
+		container.className = ''; 
+
+		if (this.state.mode === 'month') {
+			if (this.state.view === this.#SIMPLE) {
+				container.classList.add('grafik', 'monthView');
+				this.#renderMonth();
+			} else {
+				container.classList.add('monthMatrixView');
+				this.#renderMonthMatrix();
+			}
+		} else {
+			if (this.state.view === this.#SIMPLE) {
+				container.classList.add('grafik', 'year-grid');
+				this.#renderYear();
+			} else {
+				container.classList.add('yearMatrixView');
+				this.#renderYearMatrix();
+			}
+		}
+	}
+    #handleSwipe() {
     const diffX = this.#touchEndX - this.#touchStartX;
     const diffY = this.#touchEndY - this.#touchStartY;
     const threshold = 70;
@@ -628,53 +675,6 @@ class App {
     }
 }
 
-    #changeDate(delta) {
-        if (this.state.mode === 'month') {
-            const d = new Date(this.state.year, this.state.month + delta, 1);
-            this.state.year = d.getFullYear();
-            this.state.month = d.getMonth();
-        } else {
-            this.state.year += delta;
-        }
-        
-        // Aktualizacja świąt przy zmianie roku
-        this.holidays = this.engine.getPolishHolidays(this.state.year);
-        this.refresh();
-    }
-
-    goHome() {
-        const now = new Date();
-        this.state.year = now.getFullYear();
-        this.state.month = now.getMonth();
-        this.state.mode = 'month';
-        this.holidays = this.engine.getPolishHolidays(this.state.year);
-        this.refresh();
-    }
-
-    refresh() {
-		// Czyścimy klasy i ustawiamy bazę
-		const container = document.getElementById('mainContainer');
-		container.className = ''; 
-
-		if (this.state.mode === 'month') {
-			if (this.state.view === this.#SIMPLE) {
-				container.classList.add('grafik', 'monthView');
-				this.#renderMonth();
-			} else {
-				container.classList.add('monthMatrixView');
-				this.#renderMonthMatrix();
-			}
-		} else {
-			if (this.state.view === this.#SIMPLE) {
-				container.classList.add('grafik', 'year-grid');
-				this.#renderYear();
-			} else {
-				container.classList.add('yearMatrixView');
-				this.#renderYearMatrix();
-			}
-		}
-	}
-    
     #updateHolidays(year) {
 		if (year !== this.state.year) this.holidays = this.engine.getPolishHolidays(year);
 	}
