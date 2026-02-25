@@ -66,7 +66,8 @@ body {
     color: var(--text-main);
     font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow: hidden;
-    line-height: 1.4;
+    line-height: 1.4
+    overscroll-behavior-y: contain;
 }
 
 /* 3. LAYOUT GŁÓWNY */
@@ -272,12 +273,12 @@ body {
 /* 8. PANEL DOLNY I LEGENDA */
 .brigadeBar {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     padding: 2px 0;
 }
 
-.brigadeBar .button {
-    flex: 1;
+.button  {
+	flex: 1;
     font-size: 1.1rem;
 }
 
@@ -333,7 +334,7 @@ footer.legend {
 }
 
 /* 2. Nowa klasa ukrywająca - "Zwijanie" */
-.legend-collapsed {
+.legend-collapsed, .buttonHolder-collapsed {
     max-height: 0 !important;
     opacity: 0 !important;
     padding-top: 0 !important;
@@ -422,6 +423,26 @@ footer.legend {
     overflow-y: auto !important;
     height: 100%; /* Musi wypełniać wrapper, by mieć co przewijać */
 }
+
+/* 2. Styl zablokowanego przycisku */
+.button:disabled {
+    /* Wizualne "wygaszenie" */
+    opacity: 0.4;
+    filter: grayscale(1);
+    
+    /* Kolory - !important gwarantuje, że szarość przykryje kolory brygad/zmian */
+    background-color: var(--color-off) !important;
+    color: var(--border-color) !important;
+    border-color: var(--border-color) !important;
+    
+    /* Blokada interakcji */
+    cursor: not-allowed;
+    pointer-events: none; /* Kluczowe: ignoruje dotyk palca */
+    
+    /* Usunięcie efektów kliknięcia i cieni */
+    box-shadow: none !important;
+    transform: none !important;
+}
 </style>
 
 <script>
@@ -445,15 +466,25 @@ class ShiftEngine {
 
     getPolishHolidays(year) {
         let holidays = [
-            {m:0, d:1}, {m:0, d:6}, {m:4, d:1}, {m:4, d:3}, {m:7, d:15},
-            {m:10, d:1}, {m:10, d:11}, {m:11, d:24}, {m:11, d:25}, {m:11, d:26}
+            {m:0, d:1, n:"Nowy Rok"}, {m:0, d:6, n:"Trzech Króli"}, {m:4, d:1, n:"Święto Pracy"},
+            {m:4, d:3, n:"3-go Maja"}, {m:7, d:15, n:"Wiebowzięcia NMP"},
+            {m:10, d:1, n:"Wszystkich Świętych"}, {m:10, d:11, n:"Dzień Niepodległości"},
+            {m:11, d:24, n:"Wigilia"}, {m:11, d:25, n:"Boże Narodzenie"}, {m:11, d:26, n:"Boże Narodzenie"}
         ];
         const e = this.#getEaster(year);
         const easter = new Date(year, e.month, e.day);
         const addMoving = (offset) => {
             const d = new Date(easter);
+            let name = '';
             d.setDate(easter.getDate() + offset);
-            holidays.push({m: d.getMonth(), d: d.getDate()});
+            switch (offset) {
+				case 0: name = "Wielkanoc"; break;
+				case 1: name = "Poniedziałek Wielkanocny"; break;
+				case 49: name = "Zesłanie Ducha Św."; break;
+				case 60: name = "Boże Ciało"; break;
+			}
+            
+            holidays.push({m: d.getMonth(), d: d.getDate(), n:name});
         };
         [0, 1, 49, 60].forEach(offset => addMoving(offset));
         return holidays;
@@ -489,7 +520,15 @@ class App {
 			dateBar: document.getElementById("dateBar"),
 			container: document.getElementById("mainContainer"),
 			footer: document.getElementById("footer"),
-			legend: document.getElementById("legend_info")
+			legend: document.getElementById("legend_info"),
+			btnL: document.getElementById('L'),
+			btnH: document.getElementById('H'),
+			btnT: document.getElementById('T'),
+			btnA: document.getElementById('A'),
+			btnB: document.getElementById('B'),
+			btnC: document.getElementById('C'),
+			btnD: document.getElementById('D'),
+			//brigadeBtnHolder: document.getElementById('brigadeBtnHolder')
 		}
         
         this.state = {
@@ -504,22 +543,37 @@ class App {
         this.initEvents();
         this.refresh();
     }
+    
+    #haptic(type = 'light') {
+    if (!navigator.vibrate) {
+		console.log("Vibration not supported");
+		 return; // Jeśli przeglądarka nie wspiera (np. niektóre iOS)
+	}
+    
+    switch(type) {
+        case 'light': navigator.vibrate(15); break;     // Krótkie kliknięcie (przyciski)
+        case 'medium': navigator.vibrate(35); break;    // Zmiana widoku/miesiąca
+        case 'error': navigator.vibrate([50, 50, 50]); break; // Błąd (3 szybkie)
+    }
+}
 
     initEvents() {
         // --- KLIKNIĘCIA ---
         ['A', 'B', 'C', 'D'].forEach(id => {
 			const btn = document.getElementById(id);
             btn.onclick = () => {
+				this.#haptic('light');
                 this.state.brigade = id;
                 localStorage.setItem('defaultBrigade', id);
                 this.refresh();
             };
         });
 
-        document.getElementById('home').onclick = () => this.goHome();
+        this.ui.btnH.onclick = () => this.goHome();
         
-        this.ui.legend.onclick = () => {
+        this.ui.btnL.onclick = () => {
 			this.ui.footer.classList.toggle("legend-collapsed");
+			this.ui.btnL.classList.toggle("active");
         };
 
         // --- OBSŁUGA DOTYKU (SWIPE) ---
@@ -537,16 +591,27 @@ class App {
             this.#handleSwipe();
         }, {passive: true});
         
-        const viewButton = document.getElementById("view");
+        const viewButton = document.getElementById("T");
         viewButton.onclick = () => {
 			this.state.view = (this.state.mode === 'month' && this.state.view === this.#SIMPLE)? this.#MATRIX:this.#SIMPLE;
 			viewButton.classList.toggle("active", this.state.view === this.#MATRIX);
+			localStorage.setItem("view", this.state.view);
+			this.#haptic("medium");
 			this.refresh();
 		}
     }
 
+	
+	#showBrigadeButtons(state) {
+		[this.ui.btnA, this.ui.btnB, this.ui.btnC, this.ui.btnD].forEach(elem => {
+			elem.disabled = !state;
+		});
+	}
+			
 
     #changeDate(delta) {
+		const currentYear = this.state.year;
+		
         if (this.state.mode === 'month') {
             const d = new Date(this.state.year, this.state.month + delta, 1);
             this.state.year = d.getFullYear();
@@ -556,7 +621,9 @@ class App {
         }
         
         // Aktualizacja świąt przy zmianie roku
-        this.holidays = this.engine.getPolishHolidays(this.state.year);
+        if (currentYear !== this.state.year)
+			this.holidays = this.engine.getPolishHolidays(this.state.year);
+			
         this.refresh();
     }
 
@@ -589,11 +656,17 @@ class App {
 
     refresh() {
 		
-		['A', 'B', 'C', 'D'].forEach(id =>{
-			const btn = document.getElementById(id);
-			btn.classList.toggle("active", id === this.state.brigade);
-		});
-		
+		if (this.state.view === this.#MATRIX) {
+			this.#showBrigadeButtons(false);
+		} else {
+			this.#showBrigadeButtons(true);
+
+			['A', 'B', 'C', 'D'].forEach(id =>{
+				const btn = document.getElementById(id);
+				btn.classList.toggle("active", id === this.state.brigade);
+			});		
+		}
+			
 		// Czyścimy klasy i ustawiamy bazę
 		const container = this.ui.container;
 		container.className = ''; 
@@ -620,6 +693,7 @@ class App {
 
     if (Math.abs(diffX) > Math.abs(diffY)) {
         if (Math.abs(diffX) > threshold) {
+			this.#haptic("medium");
             this.#changeDate(diffX < 0 ? 1 : -1);
         }
         return; 
@@ -894,13 +968,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <div id="mainContainer" class="grafik monthView"></div>
         
         <div class="brigadeBar">
-            <button class="button" id="A">A</button>
-            <button class="button" id="B">B</button>
-            <button class="button" id="C">C</button>
-            <button class="button" id="D">D</button>
-            <button class="button" id="legend">L</button>
-            <button class="button nav-btn" id="home">H</button>
-            <button class="button nav-btn" id="view">T</button>
+			<button class="button" id="A">A</button>
+			<button class="button" id="B">B</button>
+			<button class="button" id="C">C</button>
+			<button class="button" id="D">D</button>	
+			<button class="button" id="L">L</button>
+			<button class="button nav-btn" id="H">H</button>
+			<button class="button nav-btn" id="T">T</button>
         </div>
 
         <footer class="legend legend-collapsed" id="footer">
