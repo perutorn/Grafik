@@ -281,14 +281,6 @@ body {
     font-size: 1.1rem;
 }
 
-#wzsBar {
-    padding: 12px;
-    text-align: center;
-    font-weight: 800;
-    border-radius: var(--radius-main);
-    background-color: var(--bg-datebar);
-    color: var(--text-main);
-}
 
 .legendBar {
     display: flex;
@@ -399,16 +391,7 @@ footer.legend {
     font-size: 0.9rem;
 }
 
-/* Kontener dnia w widoku roku (Matryca) */
-.year-day-matrix {
-    position: relative;
-    display: flex;
-    gap: 1px;
-    padding: 1px;
-    height: 18px; /* Mała wysokość dla widoku roku */
-    background: var(--bg-page);
-    border: 1px solid rgba(0,0,0,0.05);
-}
+
 
 /* Paski brygad */
 .mini-bar {
@@ -417,22 +400,27 @@ footer.legend {
     border-radius: 1px;
 }
 
-/* Numer dnia nałożony na paski */
-.year-day-matrix .day-num {
-    position: absolute;
-    width: 100%;
-    text-align: center;
-    font-size: 0.6rem;
-    line-height: 18px;
-    font-weight: 900;
-    color: var(--text-main);
-    pointer-events: none; /* Kliknięcie przechodzi do kontenera */
-    text-shadow: 0 0 2px white; /* Żeby numer był czytelny na kolorach */
-}
 
 /* Wyróżnienie świąt */
 .holiday-border {
     border: 1px solid var(--color-holiday) !important;
+}
+
+/* Zapewnia, że kontener zawsze wie, gdzie jest góra, nawet w Matrixie */
+#mainContainer {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* W widoku zwykłego miesiąca (siatka 7x7) blokujemy scroll, 
+   żeby swipe był stabilny */
+#mainContainer.monthView {
+    overflow: hidden;
+}
+
+.monthMatrix, .monthMatrixView {
+    overflow-y: auto !important;
+    height: 100%; /* Musi wypełniać wrapper, by mieć co przewijać */
 }
 </style>
 
@@ -483,29 +471,6 @@ class ShiftEngine {
     }
 }
 
-/* 2. INTERFEJS */
-class CalendarUI {
-    constructor() {
-        this.grid = document.querySelector('.grafik');
-        this.dateBar = document.getElementById('dateBar');
-        this.wzsBar = document.getElementById('wzsBar');
-    }
-
-    render(html, title) {
-        this.grid.innerHTML = html;
-        if (title) this.dateBar.innerText = title;
-    }
-
-    setMode(mode) {
-        this.grid.classList.toggle('year-grid', mode === 'year');
-        if (this.wzsBar) this.wzsBar.style.display = (mode === 'year' ? 'none' : 'block');
-    }
-
-    updateWZS(value) {
-        if (this.wzsBar) this.wzsBar.innerText = `WZS: ${value}`;
-    }
-}
-
 /* 3. APLIKACJA */
 class App {
     #touchStartX = 0;
@@ -519,7 +484,13 @@ class App {
 
     constructor() {
         this.engine = new ShiftEngine();
-        this.ui = new CalendarUI();
+               
+        this.ui = {
+			dateBar: document.getElementById("dateBar"),
+			container: document.getElementById("mainContainer"),
+			footer: document.getElementById("footer"),
+			legend: document.getElementById("legend_info")
+		}
         
         this.state = {
             year: new Date().getFullYear(),
@@ -545,12 +516,12 @@ class App {
         });
 
         document.getElementById('home').onclick = () => this.goHome();
-        document.getElementById("legend").onclick = () => {
-            document.getElementById("footer").classList.toggle("legend-collapsed");
+        this.ui.legend.onclick = () => {
+			this.ui.footer.classList.toggle("legend-collapsed");
         };
 
         // --- OBSŁUGA DOTYKU (SWIPE) ---
-        const wrapper = document.querySelector('.grafik_wrapper');
+        const wrapper = this.ui.container;
         
         // Używamy arrow functions, aby 'this' wskazywało na klasę App
         wrapper.addEventListener('touchstart', e => {
@@ -566,7 +537,7 @@ class App {
         
         const viewButton = document.getElementById("view");
         viewButton.onclick = () => {
-			this.state.view = (this.state.view === this.#SIMPLE)? this.#MATRIX:this.#SIMPLE;
+			this.state.view = (this.state.mode === 'month' && this.state.view === this.#SIMPLE)? this.#MATRIX:this.#SIMPLE;
 			this.refresh();
 		}
     }
@@ -588,16 +559,34 @@ class App {
 
     goHome() {
         const now = new Date();
-        this.state.year = now.getFullYear();
-        this.state.month = now.getMonth();
-        this.state.mode = 'month';
-        this.holidays = this.engine.getPolishHolidays(this.state.year);
-        this.refresh();
+        const nowYear = now.getFullYear();
+        const nowMonth = now.getMonth();
+        let change = false;
+        
+        if (this.state.year !== nowYear){
+			this.state.year = nowYear;
+			this.holidays = this.engine.getPolishHolidays(nowYear)
+			change = true;
+		}
+			
+        if (this.state.month !== nowMonth) {
+			this.state.month = nowMonth;
+			change = true;
+		}
+			
+        if (this.state.mode === 'year') {
+			this.state.mode = 'month';
+			change = true;
+		}
+		
+        if (change) {
+			this.refresh();
+		}
     }
 
     refresh() {
 		// Czyścimy klasy i ustawiamy bazę
-		const container = document.getElementById('mainContainer');
+		const container = this.ui.container;
 		container.className = ''; 
 
 		if (this.state.mode === 'month') {
@@ -609,72 +598,46 @@ class App {
 				this.#renderMonthMatrix();
 			}
 		} else {
-			if (this.state.view === this.#SIMPLE) {
-				container.classList.add('grafik', 'year-grid');
-				this.#renderYear();
-			} else {
-				container.classList.add('yearMatrixView');
-				this.#renderYearMatrix();
-			}
+			container.classList.add('grafik', 'year-grid');
+			this.#renderYear();
 		}
 	}
-    #handleSwipe() {
+	
+	#handleSwipe() {
     const diffX = this.#touchEndX - this.#touchStartX;
     const diffY = this.#touchEndY - this.#touchStartY;
-    const threshold = 70;
-    const container = document.getElementById('mainContainer');
+    const threshold = 60;
+    const container = this.ui.container;
 
-    // 1. Oś Pozioma (Miesiąc/Rok +/- 1)
     if (Math.abs(diffX) > Math.abs(diffY)) {
         if (Math.abs(diffX) > threshold) {
             this.#changeDate(diffX < 0 ? 1 : -1);
         }
-    } 
-    // 2. Oś Pionowa (Zoom In / Zoom Out)
-    else {
-        if (Math.abs(diffY) > threshold) {
-            const oldMode = this.state.mode;
-            
-            // Definiujemy stany krańcowe scrolla
-            // Margines 2px eliminuje błędy zaokrągleń na ekranach mobilnych
-            const isAtTop = container.scrollTop <= 2;
-            const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;
+        return; 
+    }
 
-            if (diffY < 0) { 
-                // SWIPE W GÓRĘ (Palec leci do góry -> próba przewinięcia w dół)
-                if (this.state.mode === 'month' && this.state.view === this.#MATRIX) {
-                    // Przejdź do roku TYLKO jeśli już jesteś na samym dole i "popychasz" dalej
-                    if (isAtBottom) {
-                        this.state.mode = 'year';
-                    } else {
-                        return; // Jeśli nie jesteś na dole, pozwól na zwykły scroll
-                    }
-                }
-            } else { 
-                // SWIPE W DÓŁ (Palec leci w dół -> próba przewinięcia w górę)
-                if (this.state.mode === 'month' && this.state.view === this.#MATRIX) {
-                    // Przejdź do roku TYLKO jeśli jesteś na samej górze i "ciągniesz" dalej
-                    if (isAtTop) {
-                        this.state.mode = 'year';
-                    } else {
-                        return; // Jeśli nie jesteś na górze, pozwól na zwykły scroll
-                    }
-                }
-                
-                // Logika powrotu z Roku do Miesiąca (opcjonalnie)
-                if (this.state.mode === 'year' && isAtTop) {
-                    this.state.mode = 'month';
-                }
-            }
-
-            if (oldMode !== this.state.mode) {
-                localStorage.setItem("mode", this.state.mode);
-                this.refresh();
+    if (diffY > threshold) {
+        // --- KLUCZOWA ZMIANA TUTAJ ---
+        // Jeśli to Matrix, szukamy przewijalnego dziecka. Jeśli nie, sprawdzamy kontener.
+        const scrollTarget = container.querySelector('.matrix-scroll') || container;
+		const isAtTop = scrollTarget.scrollTop <= 5;
+		
+        if (isAtTop) {
+            if (this.state.mode === 'month') {
+                this.state.mode = 'year';
+                this.#saveAndRefresh();
+            } else if (this.state.mode === 'year') {
+                this.state.mode = 'month';
+                this.#saveAndRefresh();
             }
         }
     }
 }
-
+// Pomocnicza metoda, żeby nie powtarzać kodu
+#saveAndRefresh() {
+    localStorage.setItem("mode", this.state.mode);
+    this.refresh();
+}
     #updateHolidays(year) {
 		if (year !== this.state.year) this.holidays = this.engine.getPolishHolidays(year);
 	}
@@ -740,7 +703,9 @@ class App {
             <span>NOCE: <strong>${nightHours}h</strong></span>
         </div>`;
 
-    this.ui.render(html, title);
+    //this.ui.render(html, title);
+    this.ui.container.innerHTML = html;
+    this.ui.dateBar.innerText = title;
 }
 
     #calculateWZS(year, month) {
@@ -760,7 +725,7 @@ class App {
         const grid = this.ui.grid;
         
         // Czyścimy grid i ustawiamy tryb
-        this.ui.setMode('year');
+        this.ui.container.classList.toggle("year-grid", this.state.mode === 'year');
         this.ui.dateBar.innerText = year;
 
         let fullYearHtml = ''; 
@@ -825,7 +790,8 @@ class App {
                 </div>`;
         }
 
-        this.ui.render(fullYearHtml, year.toString());
+        this.ui.container.innerHTML = fullYearHtml;
+        this.ui.dateBar.innerText = year.toString();
     }
 
     // Dodaj tę pomocniczą metodę do klasy App, aby klinięcie w miniatury działało:
@@ -846,11 +812,11 @@ class App {
     
     // 1. Nagłówek macierzy
     let html = `
-        <div class="matrix-row matrix-header">
-            <div>DATA</div>
-            <div>A</div><div>B</div><div>C</div><div>D</div>
-        </div>
-        <div style="overflow-y: auto; flex-grow: 1;">`;
+    <div class="matrix-row matrix-header">
+        <div>DATA</div>
+        <div>A</div><div>B</div><div>C</div><div>D</div>
+    </div>
+    <div class="matrix-scroll" style="overflow-y: auto; flex-grow: 1;">`;
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -897,57 +863,11 @@ class App {
     html += `</div>`;
     
     // 3. Renderowanie do UI
-    container.className = 'monthMatrix'; // Podmiana klasy dla zmiany layoutu
-    //container.innerHTML = html;
-    this.ui.render(html, title);
+    this.ui.container.className = 'monthMatrix';
+    this.ui.container.innerHTML = html;
+    this.ui.dateBar.innerText = title;
 }
     
-    #renderYearMatrix() {
-    const { year } = this.state;
-    const container = this.ui.grid;
-    container.className = 'year-grid matrix-mode'; // Nowa klasa dla specyficznych styli
-    container.innerHTML = '';
-
-    for (let m = 0; m < 12; m++) {
-        const monthCont = document.createElement('div');
-        monthCont.className = 'year-month';
-        
-        // Kliknięcie w miesiąc przenosi do macierzy miesiąca
-        monthCont.onclick = () => this.goToMonth(m);
-
-        const monthName = new Date(year, m).toLocaleString('pl', { month: 'long' });
-        let html = `<div class="year-month-name">${monthName}</div><div class="year-days-grid">`;
-
-        const daysInMonth = new Date(year, m + 1, 0).getDate();
-        const firstDay = new Date(year, m, 1).getDay();
-        const offset = firstDay === 0 ? 6 : firstDay - 1;
-
-        // Offset dla wyrównania dni tygodnia
-        for (let i = 0; i < offset; i++) html += '<div></div>';
-
-        for (let d = 1; d <= daysInMonth; d++) {
-            const ts = new Date(year, m, d).getTime();
-            const isHoliday = this.holidays.some(h => h.m === m && h.d === d);
-            
-            html += `<div class="year-day-matrix ${isHoliday ? 'holiday-border' : ''}">`;
-            
-            // Generujemy 4 paski brygad
-            ['A', 'B', 'C', 'D'].forEach(br => {
-                const shift = this.engine.getShift(ts, br);
-                const colorClass = isHoliday ? 'holiday' : (shift < 4 ? `shift${shift}` : 'off');
-                html += `<div class="mini-bar ${colorClass}"></div>`;
-            });
-
-            html += `<span class="day-num">${d}</span></div>`;
-        }
-
-        html += '</div>';
-        monthCont.innerHTML = html;
-        container.appendChild(monthCont);
-    }
-}
-   
-
 }
 
 // Start
