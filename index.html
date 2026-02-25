@@ -508,7 +508,8 @@ class App {
     initEvents() {
         // --- KLIKNIĘCIA ---
         ['A', 'B', 'C', 'D'].forEach(id => {
-            document.getElementById(id).onclick = () => {
+			const btn = document.getElementById(id);
+            btn.onclick = () => {
                 this.state.brigade = id;
                 localStorage.setItem('defaultBrigade', id);
                 this.refresh();
@@ -516,6 +517,7 @@ class App {
         });
 
         document.getElementById('home').onclick = () => this.goHome();
+        
         this.ui.legend.onclick = () => {
 			this.ui.footer.classList.toggle("legend-collapsed");
         };
@@ -538,6 +540,7 @@ class App {
         const viewButton = document.getElementById("view");
         viewButton.onclick = () => {
 			this.state.view = (this.state.mode === 'month' && this.state.view === this.#SIMPLE)? this.#MATRIX:this.#SIMPLE;
+			viewButton.classList.toggle("active", this.state.view === this.#MATRIX);
 			this.refresh();
 		}
     }
@@ -585,6 +588,12 @@ class App {
     }
 
     refresh() {
+		
+		['A', 'B', 'C', 'D'].forEach(id =>{
+			const btn = document.getElementById(id);
+			btn.classList.toggle("active", id === this.state.brigade);
+		});
+		
 		// Czyścimy klasy i ustawiamy bazę
 		const container = this.ui.container;
 		container.className = ''; 
@@ -906,3 +915,4 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 </body>
 </html>
+
