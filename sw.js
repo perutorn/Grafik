@@ -1,4 +1,4 @@
-const CACHE_NAME = 'grafik-v2';
+const CACHE_NAME = 'grafik-v3';
 const ASSETS = [
     './',
     './index.html',
