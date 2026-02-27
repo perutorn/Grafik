@@ -1,4 +1,4 @@
-<!DOCTYPE html>”
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -61,17 +61,25 @@
     -webkit-touch-callout: none; /* Blokuje menu przy długim dotknięciu na iOS */
 }
 
-body {
+/* body {
     background-color: var(--bg-page);
     color: var(--text-main);
     font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow: hidden;
     line-height: 1.4
-    
-}
+    overscroll-behavior-y: contain;
+} */
 
-html, body {
-	overscroll-behavior-y: none;
+body {
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    line-height: 1.4; /* Dodano średnik */
+    overscroll-behavior-y: none; /* 'none' jest bardziej restrykcyjne i pewniejsze dla body */
+    position: fixed; /* Dodatkowo blokuje "pływanie" całej strony na iOS */
+    width: 100%;
+    height: 100%;
 }
 
 /* 3. LAYOUT GŁÓWNY */
@@ -176,6 +184,12 @@ html, body {
     animation: fadeInScale 0.3s ease-out;
 }
 
+.todayClass {
+	outline: 2px solid black;      /* Jasna ramka */
+    outline-offset: -3px;
+    box-shadow: 0 0 0 1px white;   /* Ciemna obwódka wokół jasnej ramki */
+}
+
 .day-name {
     background-color: #1e293b !important; /* Stały ciemny kolor dla nagłówków dni */
     color: #ffffff !important;
@@ -213,6 +227,10 @@ html, body {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     
     animation: fadeInScale 0.3s ease-out;
+}
+
+.mini-month-current {
+	border: solid 2px gold;
 }
 
 .mini-month-name {
@@ -274,6 +292,7 @@ html, body {
 .holiday { background-color: var(--color-holiday); color: var(--text-on-dark); }
 .empty   { background-color: transparent; opacity: 0.1; }
 
+
 /* 8. PANEL DOLNY I LEGENDA */
 .brigadeBar {
     display: flex;
@@ -290,6 +309,7 @@ html, body {
 .legendBar {
     display: flex;
     gap: 4px;
+    min-height: 6vh;
  }
 
 .legendBar div {
@@ -321,7 +341,7 @@ html, body {
 
 /* 10. DOPASOWANIE MOBILNE */
 @media (max-width: 400px) {
-    .grafik_wrapper { gap: 8px; height: 95vh;}
+    .grafik_wrapper { gap: 8px; height: 100vh;}
     .day { font-size: 1rem; }
     #dateBar { font-size: 0.9rem; }
 }
@@ -338,7 +358,7 @@ footer.legend {
 }
 
 /* 2. Nowa klasa ukrywająca - "Zwijanie" */
-.legend-collapsed, .buttonHolder-collapsed {
+.legend-collapsed {
     max-height: 0 !important;
     opacity: 0 !important;
     padding-top: 0 !important;
@@ -364,6 +384,14 @@ footer.legend {
     grid-template-columns: 80px repeat(4, 1fr); /* Data + 4 brygady */
     border-bottom: 1px solid var(--border-color);
     min-height: 38px; /* Kompaktowy widok, by zmieścić miesiąc na ekranie */
+}
+
+.matrix-row.today-row {
+    background-color: rgba(255, 255, 255, 0.1); /* Delikatne rozjaśnienie tła wiersza */
+    outline: 2px solid gold; /* Złota ramka dookoła (nie przesuwa elementów) */
+    outline-offset: -2px;    /* Schowanie ramki do środka */
+    z-index: 10;             /* Upewnienie się, że ramka jest na wierzchu */
+    position: relative;
 }
 
 /* Specyficzne dla nagłówka */
@@ -396,6 +424,18 @@ footer.legend {
     font-size: 0.9rem;
 }
 
+.matrix-holidays {
+    grid-column: span 4;
+    display: flex;             /* <--- TO JEST KLUCZ */
+    align-items: center;       /* Centrowanie w pionie */
+    justify-content: center;    /* Centrowanie w poziomie */
+    
+    background-color: var(--color-holiday); 
+    color: var(--text-on-dark);
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-align: center;        /* Na wypadek, gdyby tekst zawijał się do wielu linii */
+}
 
 
 /* Paski brygad */
@@ -513,12 +553,16 @@ class App {
     #touchEndX = 0;
     #touchEndY = 0;
     
-    #SIMPLE = 0;
-    #MATRIX = 1;
+    SIMPLE = 0;
+    MATRIX = 1;
+    
+    YEAR_MODE = 10;
+    MONTH_MODE = 11;
     
 
     constructor() {
         this.engine = new ShiftEngine();
+        this.todayDate = new Date();
                
         this.ui = {
 			dateBar: document.getElementById("dateBar"),
@@ -531,35 +575,43 @@ class App {
 			btnA: document.getElementById('A'),
 			btnB: document.getElementById('B'),
 			btnC: document.getElementById('C'),
-			btnD: document.getElementById('D'),
-			//brigadeBtnHolder: document.getElementById('brigadeBtnHolder')
+			btnD: document.getElementById('D')
 		}
         
+        localStorage.setItem("mode", this.MONTH_MODE);
+        localStorage.setItem("view", this.SIMPLE);
         this.state = {
             year: new Date().getFullYear(),
             month: new Date().getMonth(),
             brigade: localStorage.getItem("defaultBrigade") || 'A',
-            mode: localStorage.getItem("mode") || "month",
-            view: localStorage.getItem("view") || this.#SIMPLE
+            mode: parseInt(localStorage.getItem("mode")) || this.MONTH_MODE,
+            view: parseInt(localStorage.getItem("view")) || this.SIMPLE,
+            showLegend: localStorage.getItem("showLegend") === 'true' || false
         };
 
         this.holidays = this.engine.getPolishHolidays(this.state.year);
         this.initEvents();
+        console.log("MONTH:", this.state.mode === this.MONTH_MODE, " YEAR:", this.state.mode === this.YEAR_MOODE,
+					" MATRIX:", this.state.view === this.MATRIX, " SIMPLE: ", this.state.view === this.SIMPLE,
+					"brigade:",  this.state.brigade, " year:",this.state.year, " month:", this.state.month,
+					" legend:", this.state.showLegend, this.state.mode, this.state.view);
+		
         this.refresh();
     }
+
     
     #haptic(type = 'light') {
-    if (!navigator.vibrate) {
-		console.log("Vibration not supported");
-		 return; // Jeśli przeglądarka nie wspiera (np. niektóre iOS)
+		if (!navigator.vibrate) {
+			console.log("Vibration not supported");
+			 return; // Jeśli przeglądarka nie wspiera (np. niektóre iOS)
+		}
+		
+		switch(type) {
+			case 'light': navigator.vibrate(15); break;     // Krótkie kliknięcie (przyciski)
+			case 'medium': navigator.vibrate(35); break;    // Zmiana widoku/miesiąca
+			case 'error': navigator.vibrate([50, 50, 50]); break; // Błąd (3 szybkie)
+		}
 	}
-    
-    switch(type) {
-        case 'light': navigator.vibrate(15); break;     // Krótkie kliknięcie (przyciski)
-        case 'medium': navigator.vibrate(35); break;    // Zmiana widoku/miesiąca
-        case 'error': navigator.vibrate([50, 50, 50]); break; // Błąd (3 szybkie)
-    }
-}
 
     initEvents() {
         // --- KLIKNIĘCIA ---
@@ -577,28 +629,39 @@ class App {
         
         this.ui.btnL.onclick = () => {
 			this.ui.footer.classList.toggle("legend-collapsed");
-			this.ui.btnL.classList.toggle("active");
+			this.ui.btnL.classList.toggle("active", !this.ui.footer.classList.contains("legend-collapsed"));
+			this.state.showLegend = this.ui.btnL.classList.contains("active");
         };
 
         // --- OBSŁUGA DOTYKU (SWIPE) ---
         const wrapper = this.ui.container;
-        
-        // Używamy arrow functions, aby 'this' wskazywało na klasę App
-        wrapper.addEventListener('touchstart', e => {
-            this.#touchStartX = e.changedTouches[0].screenX;
-            this.#touchStartY = e.changedTouches[0].screenY;
-        }, {passive: true});
 
-        wrapper.addEventListener('touchend', e => {
-            this.#touchEndX = e.changedTouches[0].screenX;
-            this.#touchEndY = e.changedTouches[0].screenY;
-            this.#handleSwipe();
-        }, {passive: true});
-        
-        const viewButton = document.getElementById("T");
-        viewButton.onclick = () => {
-			this.state.view = (this.state.mode === 'month' && this.state.view === this.#SIMPLE)? this.#MATRIX:this.#SIMPLE;
-			viewButton.classList.toggle("active", this.state.view === this.#MATRIX);
+		wrapper.addEventListener('touchstart', e => {
+			this.#touchStartX = e.changedTouches[0].screenX;
+			this.#touchStartY = e.changedTouches[0].screenY;
+		}, {passive: true});
+
+		// Zmieniamy na touchmove, żeby móc zablokować odświeżanie strony w trakcie ruchu
+		wrapper.addEventListener('touchmove', e => {
+			const currentY = e.changedTouches[0].screenY;
+			const diffY = currentY - this.#touchStartY;
+
+			// Jeśli przesuwamy w dół na samej górze kontenera, blokujemy domyślne odświeżanie
+			if (diffY > 0 && wrapper.scrollTop <= 0) {
+				if (e.cancelable) e.preventDefault();
+			}
+		}, {passive: false}); // 'passive: false' jest tu niezbędne do preventDefault
+
+		wrapper.addEventListener('touchend', e => {
+			this.#touchEndX = e.changedTouches[0].screenX;
+			this.#touchEndY = e.changedTouches[0].screenY;
+			this.#handleSwipe();
+		}, {passive: true});
+			
+		
+		this.ui.btnT.onclick = () => {
+			this.state.view = (this.state.mode === this.MONTH_MODE && this.state.view === this.SIMPLE)? this.MATRIX:this.SIMPLE;
+			this.ui.btnT.classList.toggle("active", this.state.view === this.MATRIX);
 			localStorage.setItem("view", this.state.view);
 			this.#haptic("medium");
 			this.refresh();
@@ -606,17 +669,35 @@ class App {
     }
 
 	
-	#showBrigadeButtons(state) {
-		[this.ui.btnA, this.ui.btnB, this.ui.btnC, this.ui.btnD].forEach(elem => {
-			elem.disabled = !state;
+	#buttonsRefresh() {
+		const { state: s, ui: u } = this; // Destrukturyzacja dla czytelności
+		const brigades = [u.btnA, u.btnB, u.btnC, u.btnD];
+
+		// Logika warunkowa wyciągnięta przed nawias
+		const isYearMode = (s.mode === this.YEAR_MODE);
+		const isMatrix = (s.view === this.MATRIX);
+
+		// 1. Obsługa brygad (A, B, C, D)
+		// Wyłączamy je TYLKO w trybie MATRIX, gdy NIE jest to tryb roczny
+		const brigadesDisabled = isMatrix && !isYearMode;
+
+		brigades.forEach(btn => {
+			btn.disabled = brigadesDisabled;
+			// Klasa active tylko gdy przycisk jest aktywny i zgadza się z brygadą
+			btn.classList.toggle("active", !btn.disabled && btn.id === s.brigade);
 		});
+
+		// 2. Obsługa przycisku T
+		// Wyłączamy T tylko w trybie rocznym
+		u.btnT.disabled = isYearMode;
+		
+		u.btnL.disabled = this.state.showLegend;
 	}
-			
 
     #changeDate(delta) {
 		const currentYear = this.state.year;
 		
-        if (this.state.mode === 'month') {
+        if (this.state.mode === this.MONTH_MODE) {
             const d = new Date(this.state.year, this.state.month + delta, 1);
             this.state.year = d.getFullYear();
             this.state.month = d.getMonth();
@@ -648,8 +729,8 @@ class App {
 			change = true;
 		}
 			
-        if (this.state.mode === 'year') {
-			this.state.mode = 'month';
+        if (this.state.mode === this.YEAR_MODE) {
+			this.state.mode = this.MONTH_MODE;
 			change = true;
 		}
 		
@@ -657,26 +738,25 @@ class App {
 			this.refresh();
 		}
     }
+    
+    saveSettingsToLocalStorage(){
+		localStorage.setItem("view", this.state.view);
+		localStorage.setItem("mode", this.state.mode);
+		localStorage.setItem("shoLegend", this.state.showLegend);
+		localStorage.setItem("defaultBrigade", this.state.brigade);
+	}
 
     refresh() {
 		
-		if (this.state.view === this.#MATRIX) {
-			this.#showBrigadeButtons(false);
-		} else {
-			this.#showBrigadeButtons(true);
-
-			['A', 'B', 'C', 'D'].forEach(id =>{
-				const btn = document.getElementById(id);
-				btn.classList.toggle("active", id === this.state.brigade);
-			});		
-		}
+		this.#buttonsRefresh();
+		this.saveSettingsToLocalStorage();
 			
 		// Czyścimy klasy i ustawiamy bazę
 		const container = this.ui.container;
 		container.className = ''; 
 
-		if (this.state.mode === 'month') {
-			if (this.state.view === this.#SIMPLE) {
+		if (this.state.mode === this.MONTH_MODE) {
+			if (this.state.view === this.SIMPLE) {
 				container.classList.add('grafik', 'monthView');
 				this.#renderMonth();
 			} else {
@@ -690,110 +770,109 @@ class App {
 	}
 	
 	#handleSwipe() {
-    const diffX = this.#touchEndX - this.#touchStartX;
-    const diffY = this.#touchEndY - this.#touchStartY;
-    const threshold = 60;
-    const container = this.ui.container;
+		const diffX = this.#touchEndX - this.#touchStartX;
+		const diffY = this.#touchEndY - this.#touchStartY;
+		const threshold = 60;
+		const container = this.ui.container;
 
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-        if (Math.abs(diffX) > threshold) {
-			this.#haptic("medium");
-            this.#changeDate(diffX < 0 ? 1 : -1);
-        }
-        return; 
-    }
+		if (Math.abs(diffX) > Math.abs(diffY)) {
+			if (Math.abs(diffX) > threshold) {
+				this.#haptic("medium");
+				this.#changeDate(diffX < 0 ? 1 : -1);
+			}
+			return; 
+		}
 
-    if (diffY > threshold) {
-        // --- KLUCZOWA ZMIANA TUTAJ ---
-        // Jeśli to Matrix, szukamy przewijalnego dziecka. Jeśli nie, sprawdzamy kontener.
-        const scrollTarget = container.querySelector('.matrix-scroll') || container;
-		const isAtTop = scrollTarget.scrollTop <= 5;
-		
-        if (isAtTop) {
-            if (this.state.mode === 'month') {
-                this.state.mode = 'year';
-                this.#saveAndRefresh();
-            } else if (this.state.mode === 'year') {
-                this.state.mode = 'month';
-                this.#saveAndRefresh();
-            }
-        }
-    }
-}
-// Pomocnicza metoda, żeby nie powtarzać kodu
-#saveAndRefresh() {
-    localStorage.setItem("mode", this.state.mode);
-    this.refresh();
-}
-    #updateHolidays(year) {
-		if (year !== this.state.year) this.holidays = this.engine.getPolishHolidays(year);
+		if (diffY > threshold) {
+			// --- KLUCZOWA ZMIANA TUTAJ ---
+			// Jeśli to Matrix, szukamy przewijalnego dziecka. Jeśli nie, sprawdzamy kontener.
+			const scrollTarget = container.querySelector('.matrix-scroll') || container;
+			const isAtTop = scrollTarget.scrollTop <= 5;
+			
+			if (isAtTop) {
+				if (this.state.mode === this.MONTH_MODE) {
+					this.state.mode = this.YEAR_MODE;
+					this.#saveAndRefresh();
+				} else if (this.state.mode === this.YEAR_MODE) {
+					this.state.mode = this.MONTH_MODE;
+					this.#saveAndRefresh();
+				}
+			}
+		}
 	}
+// Pomocnicza metoda, żeby nie powtarzać kodu
+	#saveAndRefresh() {
+		localStorage.setItem("mode", this.state.mode);
+		this.refresh();
+	}
+	
 
     #renderMonth() {
-    const { year, month, brigade } = this.state;
-    const title = new Date(year, month).toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
-    
-    // 1. Nagłówki dni (Pn-Nd)
-    let html = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
-        .map(n => `<div class="day-name">${n}</div>`).join('');
-    
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const offset = (firstDay === 0) ? 6 : firstDay - 1;
+		const { year, month, brigade } = this.state;
+		const title = new Date(year, month).toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
+		const todayDate = this.todayDate.getDate();
+		
+		// 1. Nagłówki dni (Pn-Nd)
+		let html = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
+			.map(n => `<div class="day-name">${n}</div>`).join('');
+		
+		const firstDay = new Date(year, month, 1).getDay();
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
+		const offset = (firstDay === 0) ? 6 : firstDay - 1;
 
-    // 2. Puste komórki na początku
-    for (let i = 0; i < offset; i++) {
-        html += `<div class="empty day"></div>`;
-    }
+		// 2. Puste komórki na początku
+		for (let i = 0; i < offset; i++) {
+			html += `<div class="empty day"></div>`;
+		}
 
-    let offDaysSystem = 0;
-    let nightShifts = 0;
+		let offDaysSystem = 0;
+		let nightShifts = 0;
 
-    // 3. Dni miesiąca
-    for (let d = 1; d <= daysInMonth; d++) {
-        const tDate = new Date(year, month, d);
-        const isHoliday = this.holidays.some(h => h.m === month && h.d === d);
-        let shiftClass = '';
+		// 3. Dni miesiąca
+		for (let d = 1; d <= daysInMonth; d++) {
+			const tDate = new Date(year, month, d);
+			const isHoliday = this.holidays.some(h => h.m === month && h.d === d);
+			let shiftClass = '';
 
-        if (isHoliday) {
-            shiftClass = 'holiday';
-            offDaysSystem++;
-        } else {
-            const shift = this.engine.getShift(tDate.getTime(), brigade);
-            if (shift < 4) {
-                shiftClass = `shift${shift}`;
-                if (shift === 3) nightShifts++; 
-            } else {
-                shiftClass = 'off';
-                offDaysSystem++;
-            }
-        }
-        html += `<div class="day ${shiftClass}"><strong>${d}</strong></div>`;
-    }
+			if (isHoliday) {
+				shiftClass = 'holiday';
+				offDaysSystem++;
+			} else {
+				const shift = this.engine.getShift(tDate.getTime(), brigade);
+				if (shift < 4) {
+					shiftClass = `shift${shift}`;
+					if (shift === 3) nightShifts++; 
+				} else {
+					shiftClass = 'off';
+					offDaysSystem++;
+				}
+			}
+			html += `<div class="day ${shiftClass} ${(d === todayDate)? "todayClass": ""}"><strong>${d}</strong></div>`;
+		}
 
-    // 4. DOPEŁNIENIE DO 42 (Gwarantuje 6 pełnych wierszy dat)
-    // To sprawia, że pasek statystyk zawsze będzie w tym samym miejscu pionowo.
-    const currentElements = offset + daysInMonth;
-    const remaining = 42 - currentElements;
-    
-    for (let i = 0; i < remaining; i++) {
-        html += `<div class="empty day"></div>`;
-    }
+		// 4. DOPEŁNIENIE DO 42 (Gwarantuje 6 pełnych wierszy dat)
+		// To sprawia, że pasek statystyk zawsze będzie w tym samym miejscu pionowo.
+		const currentElements = offset + daysInMonth;
+		const remaining = 42 - currentElements;
+		
+		for (let i = 0; i < remaining; i++) {
+			html += `<div class="empty day"></div>`;
+		}
 
-    // 5. Statystyki
-    const wzs = this.#calculateWZS(year, month) - offDaysSystem;
-    const nightHours = nightShifts * 8;
+		// 5. Statystyki
+		const wzs = this.#calculateWZS(year, month) - offDaysSystem;
+		const nightHours = nightShifts * 8;
 
-    html += `
-        <div class="monthStats">
-            <span>WZS: <strong>${wzs > 0 ? '+' + wzs : wzs}</strong></span>
-            <span>NOCE: <strong>${nightHours}h</strong></span>
-        </div>`;
+		html += `
+			<div class="monthStats">
+				<span>WZS: <strong>${wzs > 0 ? '+' + wzs : wzs}</strong></span>
+				<span>NOCE: <strong>${nightHours}h</strong></span>
+			</div>`;
 
-    //this.ui.render(html, title);
-    this.ui.container.innerHTML = html;
-    this.ui.dateBar.innerText = title;
-}
+		//this.ui.render(html, title);
+		this.ui.container.innerHTML = html;
+		this.ui.dateBar.innerText = title;
+	}
 
     #calculateWZS(year, month) {
         let norm = 0;
@@ -810,9 +889,11 @@ class App {
 #renderYear() {
         const { year, brigade } = this.state;
         const grid = this.ui.grid;
+        const todayMonth = this.todayDate.getMonth();
+        const todayYear = this.todayDate.getFullYear();
         
         // Czyścimy grid i ustawiamy tryb
-        this.ui.container.classList.toggle("year-grid", this.state.mode === 'year');
+        //this.ui.container.classList.toggle("year-grid", this.state.mode === this.YEAR_MODE);
         this.ui.dateBar.innerText = year;
 
         let fullYearHtml = ''; 
@@ -862,8 +943,9 @@ class App {
                 }
 
                 const monthName = new Date(year, m).toLocaleString('pl', { month: 'short' });
+                const currentMonth = (this.state.year === todayYear && m === todayMonth) ? 'mini-month-current' : '';
                 quarterMonthsHtml += `
-                    <div class="mini-month" onclick="window.app.goToMonth(${m})">
+                    <div class="mini-month ${currentMonth}" onclick="window.app.goToMonth(${m})">
                         <div class="mini-month-name">${monthName}</div>
                         <div class="mini-days-grid">${daysHtml}</div>
                     </div>`;
@@ -880,80 +962,93 @@ class App {
         this.ui.container.innerHTML = fullYearHtml;
         this.ui.dateBar.innerText = year.toString();
     }
-
-    // Dodaj tę pomocniczą metodę do klasy App, aby klinięcie w miniatury działało:
+	
+	//Przejdź do widoku miesiąca po kliknięciu w kafelek w widoku roku
     goToMonth(m) {
         this.state.month = m;
-        this.state.mode = 'month';
+        this.state.mode = this.MONTH_MODE;
         this.refresh();
     }
     
-    
    #renderMonthMatrix() {
-    const { year, month } = this.state;
-    const container = this.ui.grid; // Korzystamy z głównego kontenera
-    const title = new Date(year, month).toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
-    
-    
-    
-    
-    // 1. Nagłówek macierzy
-    let html = `
-    <div class="matrix-row matrix-header">
-        <div>DATA</div>
-        <div>A</div><div>B</div><div>C</div><div>D</div>
-    </div>
-    <div class="matrix-scroll" style="overflow-y: auto; flex-grow: 1;">`;
+		const { year, month } = this.state;
+		const container = this.ui.grid; // Korzystamy z głównego kontenera
+		const title = new Date(year, month).toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
+		const todayDate = this.todayDate.getDate();
+		const todayMonth = this.todayDate.getMonth();
+		const todayYear = this.todayDate.getFullYear();
+		
+		// 1. Nagłówek macierzy
+		let html = `
+		<div class="matrix-row matrix-header">
+			<div>DATA</div>
+			<div>A</div><div>B</div><div>C</div><div>D</div>
+		</div>
+		<div class="matrix-scroll" style="overflow-y: auto; flex-grow: 1;">`;
 
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // 2. Generowanie dni
-    for (let d = 1; d <= daysInMonth; d++) {
-        const tDate = new Date(year, month, d);
-        const ts = tDate.getTime();
-        const isHoliday = this.holidays.some(h => h.m === month && h.d === d);
-        const dayOfWeek = tDate.getDay();
-        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+		// 2. Generowanie dni
+		for (let d = 1; d <= daysInMonth; d++) {
+			const tDate = new Date(year, month, d);
+			const ts = tDate.getTime();
+			const isHoliday = this.holidays.find(h => h.m === month && h.d === d);
+			const dayOfWeek = tDate.getDay();
+			const isWeekend = dayOfWeek === 0;
 
-        // Format daty: 01-Pn
-        const dayStr = tDate.toLocaleString('pl', { weekday: 'short' }).replace('.', '');
-        const dateDisplay = `${d.toString().padStart(2, '0')}-${dayStr}`;
+			// Format daty: 01-Pn
+			const dayStr = tDate.toLocaleString('pl', { weekday: 'short' }).replace('.', '');
+			const dateDisplay = `${d.toString().padStart(2, '0')}-${dayStr}`;
+			const isToday = (d === todayDate
+							&& this.state.month === todayMonth
+							&& this.state.year === todayYear)? "today-row" : "";
 
-        html += `<div class="matrix-row">
-            <div class="matrix-date ${isWeekend ? 'holiday' : ''}" 
-                 style="${isWeekend ? 'color: var(--color-holiday); opacity: 0.8' : ''}">
-                 ${dateDisplay}
-            </div>`;
+			html += `<div class="matrix-row ${isToday}">
+				<div class="matrix-date ${(isWeekend || isHoliday) ? 'holiday' : ''}" 
+					 style="${(isWeekend || isHoliday) ? 'color: var(--color-holiday); opacity: 0.8' : ''}">
+					 ${dateDisplay}
+				</div>`;
 
-        // Pętla po brygadach
-        ['A', 'B', 'C', 'D'].forEach(br => {
-            const shift = this.engine.getShift(ts, br);
-            let shiftClass = '';
-            let label = '';
+			if (isHoliday) {
+				html += `<div class="matrix-holidays">${isHoliday.n}</div>`;
+			} else {
+				// Pętla po brygadach
+				['A', 'B', 'C', 'D'].forEach(br => {
+					const shift = this.engine.getShift(ts, br);
+					let shiftClass = '';
+					let label = '';
 
-            if (isHoliday) {
-                shiftClass = 'holiday';
-            } else {
-                if (shift < 4) {
-                    shiftClass = `shift${shift}`;
-                    label = shift;
-                } else {
-                    shiftClass = 'off';
-                }
-            }
-            html += `<div class="matrix-cell ${shiftClass}">${label}</div>`;
-        });
+					if (shift < 4) {
+						shiftClass = `shift${shift}`;
+						label = shift;
+					} else {
+						shiftClass = 'off';
+					}
+					html += `<div class="matrix-cell ${shiftClass}">${label}</div>`;
+				});
+			}
 
-        html += `</div>`;
-    }
-
-    html += `</div>`;
-    
-    // 3. Renderowanie do UI
-    this.ui.container.className = 'monthMatrix';
-    this.ui.container.innerHTML = html;
-    this.ui.dateBar.innerText = title;
-}
+			html += `</div>`;
+		}
+		html += `</div>`;
+		
+		// 3. Renderowanie do UI
+		this.ui.container.className = 'monthMatrix';
+		this.ui.container.innerHTML = html;
+		this.ui.dateBar.innerText = title;
+		
+		if (todayMonth === this.state.month) {
+			requestAnimationFrame(() => {
+				const todayRow = this.ui.container.querySelector('.today-row');
+				if (todayRow) {
+					todayRow.scrollIntoView({ 
+						block: 'center', 
+						behavior: 'instant' // 'instant' zamiast 'smooth', żeby użytkownik nie widział "jazdy" suwaka przy ładowaniu
+					});
+				}
+			});
+		}
+	}
     
 }
 
