@@ -771,7 +771,7 @@ class App {
 	#handleSwipe() {
     const diffX = this.#touchEndX - this.#touchStartX;
     const diffY = this.#touchEndY - this.#touchStartY;
-    const threshold = 60;
+    const threshold = 100;
     const scrollTarget = this.ui.container.querySelector('.matrix-scroll') || this.ui.container;
 
     // 1. Obsługa pozioma (Zmiana miesiąca/roku) - Priorytetowa
