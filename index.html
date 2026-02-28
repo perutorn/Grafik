@@ -83,11 +83,19 @@ body {
 .grafik_wrapper {
     width: 96vw;
     max-width: 600px;
-    max-height: 96vh;
+    height: 96vh; /* Zmieniono z max-height na height, by usztywnić ramę */
     margin: 2vh auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
+    overflow: hidden; /* Zapobiega scrollowaniu całego ekranu */
+}
+	/* Główny kontener na treść (siatka/matryca/rok) */
+#mainContainer {
+    flex: 1; /* Zabiera całą dostępną przestrzeń między nagłówkiem a stopką */
+    min-height: 0; /* Kluczowe: pozwala elementowi skurczyć się i włączyć scroll */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* 4. NAGŁÓWEK */
@@ -306,7 +314,8 @@ body {
 .legendBar {
     display: flex;
     gap: 4px;
-    min-height: 6vh;
+    min-height: 5vh;
+	flex-shrink: 0;
  }
 
 .legendBar div {
@@ -491,6 +500,7 @@ button svg {
   vertical-align: middle;
   pointer-events: none; /* Zapobiega problemom z klikaniem bezpośrednio w ścieżki SVG */
 }
+	
 </style>
 
 <script>
