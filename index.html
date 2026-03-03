@@ -1,4 +1,20 @@
 <!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<lang="pl">
+<title>Grafik</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="apple-mobile-web-app-title" content="Grafik">
+
+<link rel="apple-touch-icon" href="icon192.png">
+<link rel="icon" type="image/png" href="icon192.png">
+<link rel="manifest" href="manifest.json">
+<!DOCTYPE html>
 <html lang="pl"> <head>
     <meta charset="UTF-8">
     <title>Grafik</title>
@@ -13,8 +29,8 @@
     <meta name="apple-mobile-web-app-title" content="Grafik">
     <link rel="apple-touch-icon" href="icon192.png"> <link rel="icon" type="image/png" href="icon192.png">
     
-    <style>
-        /* Twoje style CSS... */
+    <style><meta name="theme-color" content="#121212">
+<style>
 /* 1. KONFIGURACJA I ZMIENNE (Single Source of Truth) */
 :root {
     /* Kolory Zmian */
@@ -83,19 +99,11 @@ body {
 .grafik_wrapper {
     width: 96vw;
     max-width: 600px;
-    height: 96vh; /* Zmieniono z max-height na height, by usztywnić ramę */
+    max-height: 96vh;
     margin: 2vh auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    overflow: hidden; /* Zapobiega scrollowaniu całego ekranu */
-}
-	/* Główny kontener na treść (siatka/matryca/rok) */
-#mainContainer {
-    flex: 1; /* Zabiera całą dostępną przestrzeń między nagłówkiem a stopką */
-    min-height: 0; /* Kluczowe: pozwala elementowi skurczyć się i włączyć scroll */
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    gap: 12px;
 }
 
 /* 4. NAGŁÓWEK */
@@ -180,13 +188,23 @@ body {
     background-color: var(--bg-button);
     color: var(--text-main);
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     font-size: 1.1rem;
     font-weight: 600;
     
     border-radius: var(--radius-day);
-    animation: fadeInScale 0.3s ease-out;
+    animation: fadeInScaleMonth 0.3s ease-out;
+}
+
+
+.hour-label {
+	font-size: 0.6rem !important;
+	opacity:0.8;
+	color: var(--text-main);
+	line-height: 1;
+	margin-top: 2px;
 }
 
 .todayClass {
@@ -231,7 +249,7 @@ body {
     border-radius: var(--radius-day);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     
-    animation: fadeInScale 0.3s ease-out;
+    animation: fadeInScaleYear 0.3s ease-out;
 }
 
 .mini-month-current {
@@ -301,21 +319,20 @@ body {
 /* 8. PANEL DOLNY I LEGENDA */
 .brigadeBar {
     display: flex;
-    gap: 6px;
+    gap: 12px;
     padding: 2px 0;
 }
 
 .button  {
 	flex: 1;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
 }
 
 
 .legendBar {
     display: flex;
     gap: 4px;
-    min-height: 5vh;
-	flex-shrink: 0;
+    min-height: 6vh;
  }
 
 .legendBar div {
@@ -333,10 +350,21 @@ body {
 .zoom-in-exit  { opacity: 0; transform: scale(1.08); }
 .zoom-in-enter { opacity: 0; transform: scale(0.92); }
 
-@keyframes fadeInScale {
+@keyframes fadeInScaleMonth {
     from { 
         opacity: 0.5; 
-        transform: scale(0.90); 
+        transform: scale(0.60); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
+@keyframes fadeInScaleYear {
+    from { 
+        opacity: 0.5; 
+        transform: scale(1.1); 
     }
     to { 
         opacity: 1; 
@@ -347,30 +375,9 @@ body {
 
 /* 10. DOPASOWANIE MOBILNE */
 @media (max-width: 400px) {
-    .grafik_wrapper { gap: 8px; height: 100vh;}
-    .day { font-size: 1rem; }
+    .grafik_wrapper { gap: 8px; height: 92vh; margin: 4vh auto !important;}
+    .day { font-size: 0.9rem; }
     #dateBar { font-size: 0.9rem; }
-}
-
-/* Styl tylko dla zainstalowanej aplikacji */
-@media (display-mode: standalone) {
-    body {
-        /* Dodaje miejsce na górze, by uniknąć kolizji z notchem */
-        padding-top: env(safe-area-inset-top);
-        background-color: #000; /* Możesz wymusić głębszą czerń */
-    }
-
-    #installBtn, .install-instruction {
-        display: none !important; /* Chowamy przycisk instalacji */
-    }
-
-    .matrix-row {
-        height: 55px; /* Wyższe rzędy = łatwiejsze klikanie w fabryce */
-    }
-
-    .hour-label {
-        font-size: 0.7rem; /* Nieco większe godziny dla lepszej widoczności */
-    }
 }
 
 /* 1. Stan bazowy legendy - musi mieć te właściwości, by móc się animować */
@@ -413,6 +420,13 @@ footer.legend {
     min-height: 38px; /* Kompaktowy widok, by zmieścić miesiąc na ekranie */
 }
 
+.matrix-row-selected {
+	outline: 3px solid white !important;
+	outline-offset: -3px !important;
+	z-index: 100 !important;
+	position: relative;
+}
+
 .matrix-row.today-row {
     background-color: rgba(255, 255, 255, 0.1); /* Delikatne rozjaśnienie tła wiersza */
     outline: 2px solid gold; /* Złota ramka dookoła (nie przesuwa elementów) */
@@ -446,9 +460,11 @@ footer.legend {
 .matrix-cell {
     display: flex;
     align-items: center;
+    flex-direction: column;
     justify-content: center;
     font-weight: 800;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
 }
 
 .matrix-holidays {
@@ -516,12 +532,10 @@ footer.legend {
 }
 
 button svg {
-  width: 20px;
-  height: 20px;
+  flex: 1;
   vertical-align: middle;
   pointer-events: none; /* Zapobiega problemom z klikaniem bezpośrednio w ścieżki SVG */
 }
-	
 </style>
 
 <script>
@@ -636,7 +650,8 @@ class App {
         
         this.ui.btnL.innerHTML = this.icons.legend;
 		this.ui.btnH.innerHTML = this.icons.home;
-		this.ui.btnT.innerHtml = (this.state.view === this.SIMPLE)? this.icons.matrix:this.icons.calendar;
+		console.log(this.state.view);
+		this.ui.btnT.innerHTML = (this.state.view === this.SIMPLE)? this.icons.matrix:this.icons.calendar;
 
         this.holidays = this.engine.getPolishHolidays(this.state.year);
         this.initEvents();
@@ -706,17 +721,53 @@ class App {
 
 		// Zmieniamy na touchmove, żeby móc zablokować odświeżanie strony w trakcie ruchu
 		wrapper.addEventListener('touchmove', e => {
-    const currentY = e.changedTouches[0].screenY;
-    const diffY = currentY - this.#touchStartY;
+			const currentY = e.changedTouches[0].screenY;
+			const diffY = currentY - this.#touchStartY;
 
-    // Pobieramy aktualny element przewijalny (Matrix lub standardowy)
-    const scrollTarget = wrapper.querySelector('.matrix-scroll') || wrapper;
+			// Pobieramy aktualny element przewijalny (Matrix lub standardowy)
+			const scrollTarget = wrapper.querySelector('.matrix-scroll') || wrapper;
 
-    // Jeśli przesuwamy w dół na samej górze, blokujemy systemowe odświeżanie (pull-to-refresh)
-    if (diffY > 0 && scrollTarget.scrollTop <= 0) {
-        if (e.cancelable) e.preventDefault();
+			// Jeśli przesuwamy w dół na samej górze, blokujemy systemowe odświeżanie (pull-to-refresh)
+			if (diffY > 0 && scrollTarget.scrollTop <= 0) {
+				if (e.cancelable) e.preventDefault();
+			}
+		}, {passive: false});
+		
+		this.ui.container.addEventListener("click", (e) => {
+    const isYearMode = this.state.mode === this.YEAR_MODE;
+    const isMatrixView = this.state.view === this.MATRIX;
+    
+    // --- LOGIKA DLA MACIERZY ---
+    if (isMatrixView && !isYearMode) {
+        const row = e.target.closest('.matrix-row');
+        
+        // Sprawdzamy czy trafiliśmy w rząd i czy to nie nagłówek
+        if (row && !row.classList.contains('matrix-header')) {
+            // Usuwamy klasę ze wszystkich rzędów (pętla forEach)
+            this.ui.container.querySelectorAll('.matrix-row')
+                .forEach(r => r.classList.remove('matrix-row-selected'));
+            
+            // Dodajemy klasę (bez kropki!)
+            row.classList.add('matrix-row-selected');
+        }
+        return;
     }
-}, {passive: false});
+        
+    // --- LOGIKA DLA WIDOKU ROKU ---
+    if (isYearMode) {
+        const miniMonth = e.target.closest('.mini-month');
+        // Sprawdzamy czy miniMonth istnieje, zanim pobierzemy dataset
+        if (miniMonth && miniMonth.dataset.m) {
+            this.goToMonth(parseInt(miniMonth.dataset.m));
+        }
+        return;
+    }
+
+    // Widok SIMPLE - na razie brak akcji
+    if (!isYearMode && !isMatrixView) return;
+});
+			
+		
 		wrapper.addEventListener('touchend', e => {
 			this.#touchEndX = e.changedTouches[0].screenX;
 			this.#touchEndY = e.changedTouches[0].screenY;
@@ -732,6 +783,8 @@ class App {
 			this.#haptic("medium");
 			this.refresh();
 		}
+		
+		
     }
 
 	
@@ -901,31 +954,43 @@ class App {
 
 		let offDaysSystem = 0;
 		let nightShifts = 0;
+		let workHours = '';
 
 		// 3. Dni miesiąca
 		for (let d = 1; d <= daysInMonth; d++) {
 			const tDate = new Date(year, month, d);
 			const isHoliday = this.holidays.some(h => h.m === month && h.d === d);
 			let shiftClass = '';
-			let workHours = '';
 
 			if (isHoliday) {
 				shiftClass = 'holiday';
 				offDaysSystem++;
+				workHours = '<span class="hour-label">święto</span>';
 			} else {
 				const shift = this.engine.getShift(tDate.getTime(), brigade);
+				
+				switch (shift) {
+					case 1: workHours = '<span class="hour-label">6-14</span>';break;
+					case 2: workHours = '<span class="hour-label">14-22</span>';break;
+					case 3: workHours = '<span class="hour-label">22-6</span>';break;
+				}
+				
 				if (shift < 4) {
 					shiftClass = `shift${shift}`;
 					if (shift === 3) nightShifts++; 
 				} else {
 					shiftClass = 'off';
 					offDaysSystem++;
+					workHours = '<span class="hour-label">wolne</span>';
+
 				}
 			}
 			
-			html += `<div class="day ${shiftClass} ${(d === todayDate && year === todayYear && month === todayMonth)? "todayClass": ""}"><strong>${d}</strong></div>`;
+			html += `<div class="day ${shiftClass} ${(d === todayDate && year === todayYear && month === todayMonth)? "todayClass": ""}">
+						<strong>${d}</strong>
+						${workHours}
+				 	</div>`;
 		}
-
 		// 4. DOPEŁNIENIE DO 42 (Gwarantuje 6 pełnych wierszy dat)
 		// To sprawia, że pasek statystyk zawsze będzie w tym samym miejscu pionowo.
 		const currentElements = offset + daysInMonth;
@@ -937,12 +1002,12 @@ class App {
 
 		// 5. Statystyki
 		const wzs = this.#calculateWZS(year, month) - offDaysSystem;
-		const nightHours = nightShifts * 8;
+		const nightHours = nightShifts *8;
 
 		html += `
 			<div class="monthStats">
 				<span>WZS: <strong>${wzs > 0 ? '+' + wzs : wzs}</strong></span>
-				<span>NOCE: <strong>${nightHours}h</strong></span>
+				<span>NOCE: <strong>${nightShifts} / ${nightHours}h</strong></span>
 			</div>`;
 
 		//this.ui.render(html, title);
@@ -1021,7 +1086,7 @@ class App {
                 const monthName = new Date(year, m).toLocaleString('pl', { month: 'short' });
                 const currentMonth = (this.state.year === todayYear && m === todayMonth) ? 'mini-month-current' : '';
                 quarterMonthsHtml += `
-                    <div class="mini-month ${currentMonth}" onclick="window.app.goToMonth(${m})">
+                    <div class="mini-month ${currentMonth}"  data-m="${m}">
                         <div class="mini-month-name">${monthName}</div>
                         <div class="mini-days-grid">${daysHtml}</div>
                     </div>`;
@@ -1079,7 +1144,7 @@ class App {
 							&& this.state.month === todayMonth
 							&& this.state.year === todayYear)? "today-row" : "";
 
-			html += `<div class="matrix-row ${isToday}">
+			html += `<div class="matrix-row ${isToday}" data-ts="${ts}">
 				<div class="matrix-date ${(isWeekend || isHoliday) ? 'holiday' : ''}" 
 					 style="${(isWeekend || isHoliday) ? 'color: var(--color-holiday); opacity: 0.8' : ''}">
 					 ${dateDisplay}
@@ -1093,6 +1158,13 @@ class App {
 					const shift = this.engine.getShift(ts, br);
 					let shiftClass = '';
 					let label = '';
+					let workHours = '';
+					
+					switch (shift) {
+						case 1: workHours = '<span class="hour-label">6-14</span>';break;
+						case 2: workHours = '<span class="hour-label">14-22</span>';break;
+						case 3: workHours = '<span class="hour-label">22-6</span>';break;
+					}
 
 					if (shift < 4) {
 						shiftClass = `shift${shift}`;
@@ -1100,7 +1172,10 @@ class App {
 					} else {
 						shiftClass = 'off';
 					}
-					html += `<div class="matrix-cell ${shiftClass}">${label}</div>`;
+					html += `<div class="matrix-cell ${shiftClass}" data-date="${ts}">
+							<strong>${label}</strong>
+							${workHours}
+						</div>`;
 				});
 			}
 
@@ -1131,7 +1206,6 @@ class App {
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new App();
 });
-
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1178,4 +1252,3 @@ if ('serviceWorker' in navigator) {
     </div>
 </body>
 </html>
-
