@@ -352,6 +352,37 @@ body {
     #dateBar { font-size: 0.9rem; }
 }
 
+/* Styl tylko dla zainstalowanej aplikacji */
+@media (display-mode: standalone) {
+    body {
+        /* Dodaje miejsce na górze, by uniknąć kolizji z notchem */
+        padding-top: env(safe-area-inset-top);
+        background-color: #000; /* Możesz wymusić głębszą czerń */
+		filter: grayscale(100%);
+		
+    }
+	body::before {
+        content: "TRYB APLIKACJI AKTYWNY";
+        display: block;
+        text-align: center;
+        font-size: 10px;
+        color: #64748b;
+        padding: 5px;
+    }
+
+    #installBtn, .install-instruction {
+        display: none !important; /* Chowamy przycisk instalacji */
+    }
+
+    .matrix-row {
+        height: 55px; /* Wyższe rzędy = łatwiejsze klikanie w fabryce */
+    }
+
+    .hour-label {
+        font-size: 0.7rem; /* Nieco większe godziny dla lepszej widoczności */
+    }
+}
+
 /* 1. Stan bazowy legendy - musi mieć te właściwości, by móc się animować */
 footer.legend {
     overflow: hidden;
@@ -1113,12 +1144,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Pracownik (SW) zarejestrowany!'))
-                .catch(err => console.log('Błąd SW:', err));
-        });
- }
+    window.addEventListener('load', () => {
+        // Usunięcie kropki sprawia, że ścieżka jest relatywna do lokalizacji index.html
+        navigator.serviceWorker.register('sw.js') 
+            .then(reg => {
+                // Dodaj powiadomienie o aktualizacji (opcjonalnie)
+                reg.onupdatefound = () => {
+                    console.log('Znaleziono nową wersję grafika! Odśwież, aby zaktualizować.');
+                };
+            })
+            .catch(err => console.error('Błąd SW:', err));
+    });
+}
 </script>
 </head>
 <body>
