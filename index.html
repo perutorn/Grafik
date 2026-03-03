@@ -1,20 +1,4 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<lang="pl">
-<title>Grafik</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<meta name="apple-mobile-web-app-title" content="Grafik">
-
-<link rel="apple-touch-icon" href="icon192.png">
-<link rel="icon" type="image/png" href="icon192.png">
-<link rel="manifest" href="manifest.json">
-<!DOCTYPE html>
 <html lang="pl"> <head>
     <meta charset="UTF-8">
     <title>Grafik</title>
@@ -29,7 +13,6 @@
     <meta name="apple-mobile-web-app-title" content="Grafik">
     <link rel="apple-touch-icon" href="icon192.png"> <link rel="icon" type="image/png" href="icon192.png">
     
-    <style><meta name="theme-color" content="#121212">
 <style>
 /* 1. KONFIGURACJA I ZMIENNE (Single Source of Truth) */
 :root {
@@ -77,14 +60,6 @@
     -webkit-touch-callout: none; /* Blokuje menu przy długim dotknięciu na iOS */
 }
 
-/* body {
-    background-color: var(--bg-page);
-    color: var(--text-main);
-    font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    overflow: hidden;
-    line-height: 1.4
-    overscroll-behavior-y: contain;
-} */
 
 body {
     background-color: var(--bg-page);
@@ -144,6 +119,12 @@ body {
     font-size: 1rem;
     border-radius: var(--radius-main);
     transition: all 0.2s ease;
+}
+
+.nav-btn svg {
+    width: 20px;  /* Stała szerokość ikony */
+    height: 20px; /* Stała wysokość ikony */
+    flex: none !important; /* Blokuje rozciąganie wymuszone przez flex: 1 */
 }
 
 .button.active {
@@ -734,38 +715,38 @@ class App {
 		}, {passive: false});
 		
 		this.ui.container.addEventListener("click", (e) => {
-    const isYearMode = this.state.mode === this.YEAR_MODE;
-    const isMatrixView = this.state.view === this.MATRIX;
-    
-    // --- LOGIKA DLA MACIERZY ---
-    if (isMatrixView && !isYearMode) {
-        const row = e.target.closest('.matrix-row');
-        
-        // Sprawdzamy czy trafiliśmy w rząd i czy to nie nagłówek
-        if (row && !row.classList.contains('matrix-header')) {
-            // Usuwamy klasę ze wszystkich rzędów (pętla forEach)
-            this.ui.container.querySelectorAll('.matrix-row')
-                .forEach(r => r.classList.remove('matrix-row-selected'));
-            
-            // Dodajemy klasę (bez kropki!)
-            row.classList.add('matrix-row-selected');
-        }
-        return;
-    }
-        
-    // --- LOGIKA DLA WIDOKU ROKU ---
-    if (isYearMode) {
-        const miniMonth = e.target.closest('.mini-month');
-        // Sprawdzamy czy miniMonth istnieje, zanim pobierzemy dataset
-        if (miniMonth && miniMonth.dataset.m) {
-            this.goToMonth(parseInt(miniMonth.dataset.m));
-        }
-        return;
-    }
+			const isYearMode = this.state.mode === this.YEAR_MODE;
+			const isMatrixView = this.state.view === this.MATRIX;
+			
+			// --- LOGIKA DLA MACIERZY ---
+			if (isMatrixView && !isYearMode) {
+				const row = e.target.closest('.matrix-row');
+				
+				// Sprawdzamy czy trafiliśmy w rząd i czy to nie nagłówek
+				if (row && !row.classList.contains('matrix-header')) {
+					// Usuwamy klasę ze wszystkich rzędów (pętla forEach)
+					this.ui.container.querySelectorAll('.matrix-row')
+						.forEach(r => r.classList.remove('matrix-row-selected'));
+					
+					// Dodajemy klasę (bez kropki!)
+					row.classList.add('matrix-row-selected');
+				}
+				return;
+			}
+				
+			// --- LOGIKA DLA WIDOKU ROKU ---
+			if (isYearMode) {
+				const miniMonth = e.target.closest('.mini-month');
+				// Sprawdzamy czy miniMonth istnieje, zanim pobierzemy dataset
+				if (miniMonth && miniMonth.dataset.m) {
+					this.goToMonth(parseInt(miniMonth.dataset.m));
+				}
+				return;
+			}
 
-    // Widok SIMPLE - na razie brak akcji
-    if (!isYearMode && !isMatrixView) return;
-});
+			// Widok SIMPLE - na razie brak akcji
+			if (!isYearMode && !isMatrixView) return;
+		});
 			
 		
 		wrapper.addEventListener('touchend', e => {
@@ -783,8 +764,6 @@ class App {
 			this.#haptic("medium");
 			this.refresh();
 		}
-		
-		
     }
 
 	
