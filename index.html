@@ -1110,6 +1110,15 @@ class App {
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new App();
 });
+
+
+if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Pracownik (SW) zarejestrowany!'))
+                .catch(err => console.log('Błąd SW:', err));
+        });
+ }
 </script>
 </head>
 <body>
